@@ -1,0 +1,8 @@
+# Manejo automático de saltos de línea
+* text=auto
+
+# Archivos que deben mantener formato Windows siempre (scripts batch)
+*.bat text eol=crlf
+
+# Archivos que deben mantener formato Unix/Mac siempre (scripts shell)
+*.sh text eol=lf
