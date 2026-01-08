@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../config/theme.dart';
@@ -24,6 +25,78 @@ class _ProtocolPreviewViewState extends State<ProtocolPreviewView> {
     });
   }
 
+  void _showDeleteConfirmation() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Eliminar Protocolo'),
+          content: const Text(
+            '¿Está seguro que desea eliminar este protocolo? Esta acción no se puede deshacer.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancelar'),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context);
+                _deleteProtocol();
+              },
+              child: const Text(
+                'Eliminar',
+                style: TextStyle(color: Colors.red),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _deleteProtocol() async {
+    // Mostrar indicador de carga
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return const Center(child: CircularProgressIndicator());
+      },
+    );
+
+    try {
+      await context.read<ProtocoloViewModel>().eliminarProtocolo(
+        widget.protocolId,
+      );
+
+      // Cerrar el diálogo de carga
+      if (!mounted) return;
+      Navigator.of(context).pop();
+
+      // Navegar al home usando go en lugar de goNamed
+      if (!mounted) return;
+      GoRouter.of(context).go('/');
+
+      // Mostrar mensaje de éxito después de navegar
+      Future.delayed(const Duration(milliseconds: 300), () {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Protocolo eliminado exitosamente')),
+        );
+      });
+    } catch (e) {
+      // Cerrar el diálogo de carga
+      if (!mounted) return;
+      Navigator.of(context).pop();
+
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error al eliminar protocolo: $e')),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -37,6 +110,22 @@ class _ProtocolPreviewViewState extends State<ProtocolPreviewView> {
           ),
         ),
         elevation: 0,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.delete_outline),
+            onPressed: () {
+              _showDeleteConfirmation();
+            },
+            tooltip: 'Eliminar Protocolo',
+          ),
+          IconButton(
+            icon: const Icon(Icons.home),
+            onPressed: () {
+              GoRouter.of(context).go('/');
+            },
+            tooltip: 'Ir al Inicio',
+          ),
+        ],
       ),
       backgroundColor: AppColors.background,
       body: Consumer<ProtocoloViewModel>(
@@ -136,16 +225,17 @@ class _ProtocolPreviewViewState extends State<ProtocolPreviewView> {
         _buildSection('INFORMACIÓN GENERAL', [
           _buildInfoRow('Número de Protocolo', protocolo.numeroInterno ?? '-'),
           _buildInfoRow('Fecha', fechaFormato),
-          _buildInfoRow(
-            'Médico Remitente',
-            protocolo.medicoRemitenteId != null
-                ? (context
-                          .read<MedicoViewModel>()
-                          .seleccionado
-                          ?.nombreCompleto ??
-                      '-')
-                : '-',
-          ),
+          protocolo.medicoRemitenteId != null
+              ? Consumer<MedicoViewModel>(
+                  builder: (context, medicoVM, child) {
+                    final nombre =
+                        medicoVM.seleccionado?.id == protocolo.medicoRemitenteId
+                        ? medicoVM.seleccionado?.nombreCompleto ?? 'Cargando...'
+                        : 'Cargando...';
+                    return _buildInfoRow('Médico Remitente', nombre);
+                  },
+                )
+              : _buildInfoRow('Médico Remitente', '-'),
           _buildInfoRow(
             'Edad al Momento',
             protocolo.edadAlMomento != null

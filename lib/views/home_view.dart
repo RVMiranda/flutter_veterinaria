@@ -288,6 +288,7 @@ class _HomeViewState extends State<HomeView> {
   Widget _buildProtocolCard(Protocolo protocolo) {
     final fecha = DateTime.parse(protocolo.fechaCreacion);
     final fechaFormato = '${fecha.day}/${fecha.month}/${fecha.year}';
+    final numeroInterno = protocolo.numeroInterno ?? 'S/N';
 
     return Card(
       elevation: 1,
@@ -304,7 +305,7 @@ class _HomeViewState extends State<HomeView> {
           ),
           child: Center(
             child: Text(
-              protocolo.numeroInterno ?? '--',
+              numeroInterno,
               style: GoogleFonts.lato(
                 fontSize: 12,
                 fontWeight: FontWeight.bold,
@@ -315,7 +316,7 @@ class _HomeViewState extends State<HomeView> {
           ),
         ),
         title: Text(
-          'Protocolo #${protocolo.numeroInterno}',
+          'Protocolo #$numeroInterno',
           style: GoogleFonts.lato(
             fontSize: 14,
             fontWeight: FontWeight.w600,
@@ -351,13 +352,12 @@ class _HomeViewState extends State<HomeView> {
           color: AppColors.secondary,
         ),
         onTap: () {
-          context.pushNamed(
-            RouteNames.protocolEdit,
-            extra: ProtocolEditParams(
-              patientId: protocolo.pacienteId ?? 0,
-              protocolId: protocolo.id,
-            ),
-          );
+          if (protocolo.id != null) {
+            context.pushNamed(
+              RouteNames.protocolPreview,
+              queryParameters: {'protocolId': protocolo.id.toString()},
+            );
+          }
         },
       ),
     );

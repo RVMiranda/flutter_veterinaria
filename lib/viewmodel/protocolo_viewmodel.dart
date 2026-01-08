@@ -94,6 +94,10 @@ class ProtocoloViewModel extends BaseViewModel {
     try {
       await _repository.eliminarProtocolo(id);
       _protocolos.removeWhere((p) => p.id == id);
+      if (_seleccionado?.id == id) {
+        _seleccionado = null;
+      }
+      notifyListeners();
       setSuccess();
     } catch (e) {
       setError(e.toString());

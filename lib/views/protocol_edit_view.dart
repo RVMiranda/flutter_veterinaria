@@ -93,9 +93,60 @@ class _ProtocolEditViewState extends State<ProtocolEditView> {
       context.read<MedicoViewModel>().cargarTodos();
 
       if (widget.protocolId != null) {
-        context.read<ProtocoloViewModel>().cargarDetalle(widget.protocolId!);
+        context
+            .read<ProtocoloViewModel>()
+            .cargarDetalle(widget.protocolId!)
+            .then((_) {
+              _populateControllersFromProtocol();
+            });
       }
     });
+  }
+
+  /// Populate all controllers from an existing protocol
+  void _populateControllersFromProtocol() {
+    final viewModel = context.read<ProtocoloViewModel>();
+    final protocolo = viewModel.seleccionado;
+    if (protocolo == null) return;
+
+    _tejidosController.text = protocolo.tejidosEnviados ?? '';
+    _anamnesesController.text = protocolo.anamnesis ?? '';
+    _dxPresuntivoController.text = protocolo.dxPresuntivo ?? '';
+    _sitioAnastomicoController.text = protocolo.sitioAnatomico ?? '';
+    _metodoObtencionController.text = protocolo.metodoObtencion ?? '';
+    _laminasController.text = protocolo.laminasEnviadas?.toString() ?? '';
+    _liquidoController.text = protocolo.liquidoEnviadoMl?.toString() ?? '';
+    _metodoFijacionController.text = protocolo.metodoFijacion ?? '';
+    _aspectoMacroscopicoController.text = protocolo.aspectoMacroscopico ?? '';
+    _aspectoMicroscopicoController.text = protocolo.aspectoMicroscopico ?? '';
+    _diagnosticoCitologicoController.text =
+        protocolo.diagnosticoCitologico ?? '';
+    _observacionesController.text = protocolo.observaciones ?? '';
+
+    // Poblamos también la evaluación de lesión si existe
+    final evaluacion = viewModel.evaluacionSeleccionada;
+    if (evaluacion != null) {
+      _localizacionController.text = evaluacion.localizacion ?? '';
+      _tamanoLargoController.text = evaluacion.tamanoLargo?.toString() ?? '';
+      _tamanoAnchoController.text = evaluacion.tamanoAncho?.toString() ?? '';
+      _tamanoAltoController.text = evaluacion.tamanoAlto?.toString() ?? '';
+      _formaController.text = evaluacion.forma ?? '';
+      _colorController.text = evaluacion.color ?? '';
+      _consistenciaController.text = evaluacion.consistencia ?? '';
+      _distribucionController.text = evaluacion.distribucion ?? '';
+      _patronCrecimientoController.text = evaluacion.patronCrecimiento ?? '';
+      _tasaCrecimientoController.text = evaluacion.tasaCrecimiento ?? '';
+      _contornoController.text = evaluacion.contorno ?? '';
+    }
+
+    // Set selected medico
+    if (protocolo.medicoRemitenteId != null) {
+      if (mounted) {
+        setState(() {
+          _selectedMedicoId = protocolo.medicoRemitenteId;
+        });
+      }
+    }
   }
 
   @override
@@ -155,6 +206,7 @@ class _ProtocolEditViewState extends State<ProtocolEditView> {
                 _buildPacienteInfoPage(),
                 _buildProtocolFormPage(),
                 _buildEvaluacionLesionPage(),
+                _buildResultadosPage(),
               ],
             ),
           ),
@@ -173,7 +225,7 @@ class _ProtocolEditViewState extends State<ProtocolEditView> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: List.generate(
-              3,
+              4,
               (index) => Column(
                 children: [
                   Container(
@@ -197,7 +249,7 @@ class _ProtocolEditViewState extends State<ProtocolEditView> {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    ['Paciente', 'Protocolo', 'Lesión'][index],
+                    ['Paciente', 'Protocolo', 'Lesión', 'Resultados'][index],
                     style: GoogleFonts.lato(fontSize: 10),
                   ),
                 ],
@@ -489,6 +541,63 @@ class _ProtocolEditViewState extends State<ProtocolEditView> {
     );
   }
 
+  Widget _buildResultadosPage() {
+    return ListView(
+      padding: const EdgeInsets.all(16),
+      children: [
+        Text(
+          'Resultados de la Evaluación',
+          style: GoogleFonts.lato(fontSize: 18, fontWeight: FontWeight.bold),
+        ),
+        const SizedBox(height: 16),
+        Card(
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              children: [
+                TextField(
+                  controller: _aspectoMacroscopicoController,
+                  maxLines: 3,
+                  decoration: const InputDecoration(
+                    labelText: 'Aspecto Macroscópico',
+                    hintText: 'Descripción del aspecto macroscópico...',
+                  ),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: _aspectoMicroscopicoController,
+                  maxLines: 3,
+                  decoration: const InputDecoration(
+                    labelText: 'Aspecto Microscópico',
+                    hintText: 'Descripción del aspecto microscópico...',
+                  ),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: _diagnosticoCitologicoController,
+                  maxLines: 3,
+                  decoration: const InputDecoration(
+                    labelText: 'Diagnóstico Citológico',
+                    hintText: 'Diagnóstico basado en análisis citológico...',
+                  ),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: _observacionesController,
+                  maxLines: 3,
+                  decoration: const InputDecoration(
+                    labelText: 'Observaciones',
+                    hintText: 'Observaciones adicionales...',
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
   Widget _buildReadOnlyField(String label, String value) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -527,7 +636,7 @@ class _ProtocolEditViewState extends State<ProtocolEditView> {
               },
               child: const Text('Atrás'),
             ),
-          if (_currentPage < 2)
+          if (_currentPage < 3)
             ElevatedButton(
               onPressed: () {
                 _pageController.nextPage(
