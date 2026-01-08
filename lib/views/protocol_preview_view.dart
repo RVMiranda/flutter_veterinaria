@@ -3,6 +3,8 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../config/theme.dart';
 import '../viewmodel/protocolo_viewmodel.dart';
+import '../viewmodel/veterinaria_viewmodel.dart';
+import '../viewmodel/medico_viewmodel.dart';
 
 class ProtocolPreviewView extends StatefulWidget {
   final int protocolId;
@@ -48,6 +50,21 @@ class _ProtocolPreviewViewState extends State<ProtocolPreviewView> {
             return const Center(child: Text('Protocolo no encontrado'));
           }
 
+          // Cargar información de veterinaria y del médico si es necesario
+          Future.microtask(() async {
+            final vetVM = context.read<VeterinariaViewModel>();
+            if (vetVM.info == null) {
+              await vetVM.cargarInformacion();
+            }
+            if (protocolo.medicoRemitenteId != null) {
+              final medicoVM = context.read<MedicoViewModel>();
+              if (medicoVM.seleccionado == null ||
+                  medicoVM.seleccionado!.id != protocolo.medicoRemitenteId) {
+                await medicoVM.cargarDetalle(protocolo.medicoRemitenteId!);
+              }
+            }
+          });
+
           return SingleChildScrollView(
             child: Padding(
               padding: const EdgeInsets.all(16),
@@ -77,23 +94,33 @@ class _ProtocolPreviewViewState extends State<ProtocolPreviewView> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          'PROTOCOLO CITOLÓGICO',
-          style: GoogleFonts.lato(
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-            color: AppColors.primary,
-          ),
+        Consumer<VeterinariaViewModel>(
+          builder: (context, vetVM, _) {
+            final info = vetVM.info;
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  info?.nombreClinica ?? 'PROTOCOLO CITOLÓGICO',
+                  style: GoogleFonts.lato(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.primary,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  info?.direccion ?? 'Vista Previa para Descargar/Imprimir',
+                  style: GoogleFonts.lato(
+                    fontSize: 12,
+                    color: AppColors.textDark.withOpacity(0.6),
+                  ),
+                ),
+                const Divider(height: 24),
+              ],
+            );
+          },
         ),
-        const SizedBox(height: 8),
-        Text(
-          'Vista Previa para Descargar/Imprimir',
-          style: GoogleFonts.lato(
-            fontSize: 12,
-            color: AppColors.textDark.withOpacity(0.6),
-          ),
-        ),
-        const Divider(height: 24),
       ],
     );
   }
@@ -109,6 +136,16 @@ class _ProtocolPreviewViewState extends State<ProtocolPreviewView> {
         _buildSection('INFORMACIÓN GENERAL', [
           _buildInfoRow('Número de Protocolo', protocolo.numeroInterno ?? '-'),
           _buildInfoRow('Fecha', fechaFormato),
+          _buildInfoRow(
+            'Médico Remitente',
+            protocolo.medicoRemitenteId != null
+                ? (context
+                          .read<MedicoViewModel>()
+                          .seleccionado
+                          ?.nombreCompleto ??
+                      '-')
+                : '-',
+          ),
           _buildInfoRow(
             'Edad al Momento',
             protocolo.edadAlMomento != null

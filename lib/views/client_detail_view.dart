@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../config/theme.dart';
 import '../models/paciente.dart';
 import '../viewmodel/paciente_viewmodel.dart';
+import '../providers/router_provider.dart';
 import '../viewmodel/propietario_viewmodel.dart';
 
 class ClientDetailView extends StatefulWidget {
@@ -38,6 +39,12 @@ class _ClientDetailViewState extends State<ClientDetailView> {
           ),
         ),
         elevation: 0,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.home),
+            onPressed: () => context.goNamed(RouteNames.home),
+          ),
+        ],
       ),
       backgroundColor: AppColors.background,
       body: SingleChildScrollView(
@@ -52,10 +59,11 @@ class _ClientDetailViewState extends State<ClientDetailView> {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
-          // TODO: Navegar a formulario crear paciente
-          // context.pushNamed('createPatient',
-          //   pathParameters: {'clientId': widget.clientId.toString()},
-          // );
+          // Navegar a la vista de crear paciente para este propietario
+          context.pushNamed(
+            RouteNames.createPatient,
+            pathParameters: {'clientId': widget.clientId.toString()},
+          );
         },
         child: const Icon(Icons.add),
       ),
@@ -127,7 +135,13 @@ class _ClientDetailViewState extends State<ClientDetailView> {
                     width: double.infinity,
                     child: ElevatedButton.icon(
                       onPressed: () {
-                        // TODO: Navegar a editar propietario
+                        // Navegar a editar propietario
+                        context.pushNamed(
+                          RouteNames.editClient,
+                          pathParameters: {
+                            'clientId': widget.clientId.toString(),
+                          },
+                        );
                       },
                       icon: const Icon(Icons.edit),
                       label: const Text('Editar Información'),
@@ -256,16 +270,84 @@ class _ClientDetailViewState extends State<ClientDetailView> {
           '${paciente.especie ?? 'Sin especificar'} | ${edad != null ? '$edad años' : 'Edad desconocida'}',
           style: GoogleFonts.lato(fontSize: 12),
         ),
-        trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+        trailing: PopupMenuButton(
+          itemBuilder: (ctx) => [
+            PopupMenuItem(
+              child: const Text('Editar'),
+              onTap: () {
+                // Navegar a editar paciente
+                Future.microtask(
+                  () => context.pushNamed(
+                    RouteNames.editPatient,
+                    pathParameters: {
+                      'clientId': widget.clientId.toString(),
+                      'patientId': paciente.id.toString(),
+                    },
+                  ),
+                );
+              },
+            ),
+            PopupMenuItem(
+              child: const Text('Eliminar'),
+              onTap: () async {
+                // Confirmar eliminación
+                Future.microtask(() async {
+                  final confirm = await showDialog<bool>(
+                    context: context,
+                    builder: (dCtx) => AlertDialog(
+                      title: const Text('Confirmar'),
+                      content: const Text(
+                        '¿Eliminar esta mascota? Esta acción no se puede deshacer.',
+                      ),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.of(dCtx).pop(false),
+                          child: const Text('Cancelar'),
+                        ),
+                        TextButton(
+                          onPressed: () => Navigator.of(dCtx).pop(true),
+                          child: const Text('Eliminar'),
+                        ),
+                      ],
+                    ),
+                  );
+
+                  if (confirm == true) {
+                    try {
+                      await context.read<PacienteViewModel>().eliminarPaciente(
+                        paciente.id!,
+                      );
+                      if (!mounted) return;
+                      await context
+                          .read<PacienteViewModel>()
+                          .cargarPorPropietario(widget.clientId);
+                      if (!mounted) return;
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Mascota eliminada')),
+                      );
+                    } catch (e) {
+                      if (!mounted) return;
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('Error al eliminar: ${e.toString()}'),
+                        ),
+                      );
+                    }
+                  }
+                });
+              },
+            ),
+          ],
+        ),
         onTap: () {
-          // TODO: Navegar a historial del paciente
-          // context.pushNamed(
-          //   'patientHistory',
-          //   pathParameters: {
-          //     'clientId': widget.clientId.toString(),
-          //     'patientId': paciente.id.toString(),
-          //   },
-          // );
+          // Navegar a historial del paciente
+          context.pushNamed(
+            RouteNames.patientHistory,
+            pathParameters: {
+              'clientId': widget.clientId.toString(),
+              'patientId': paciente.id.toString(),
+            },
+          );
         },
       ),
     );

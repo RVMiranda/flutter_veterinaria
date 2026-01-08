@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../config/theme.dart';
+import '../providers/router_provider.dart';
 import '../models/protocolo.dart';
 import '../viewmodel/paciente_viewmodel.dart';
 import '../viewmodel/protocolo_viewmodel.dart';
@@ -43,6 +44,12 @@ class _PatientHistoryViewState extends State<PatientHistoryView> {
           ),
         ),
         elevation: 0,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.home),
+            onPressed: () => context.goNamed(RouteNames.home),
+          ),
+        ],
       ),
       backgroundColor: AppColors.background,
       body: SingleChildScrollView(
@@ -57,13 +64,14 @@ class _PatientHistoryViewState extends State<PatientHistoryView> {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
-          // TODO: Navegar a crear protocolo
-          // context.pushNamed('protocolEdit',
-          //   extra: ProtocolEditParams(
-          //     patientId: widget.patientId,
-          //     protocolId: null,
-          //   ),
-          // );
+          // Navegar a crear protocolo para este paciente
+          context.pushNamed(
+            RouteNames.protocolEdit,
+            extra: ProtocolEditParams(
+              patientId: widget.patientId,
+              protocolId: null,
+            ),
+          );
         },
         child: const Icon(Icons.add),
       ),
@@ -149,7 +157,14 @@ class _PatientHistoryViewState extends State<PatientHistoryView> {
                     width: double.infinity,
                     child: ElevatedButton.icon(
                       onPressed: () {
-                        // TODO: Navegar a editar paciente
+                        // Navegar a editar paciente
+                        context.pushNamed(
+                          RouteNames.editPatient,
+                          pathParameters: {
+                            'clientId': widget.clientId.toString(),
+                            'patientId': widget.patientId.toString(),
+                          },
+                        );
                       },
                       icon: const Icon(Icons.edit),
                       label: const Text('Editar Información'),

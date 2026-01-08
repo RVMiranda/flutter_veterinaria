@@ -1,0 +1,101 @@
+-- 1. Datos de la Veterinaria (Para el encabezado fijo del PDF)
+-- Esto cumple con el requisito de "campos fijos"
+CREATE TABLE veterinaria_info (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    nombre_clinica TEXT NOT NULL, -- Ej: Veterinaria "El Gaucho"
+    direccion TEXT,
+    telefono_principal TEXT,
+    telefono_urgencias TEXT,
+    email_contacto TEXT,
+    logo_path TEXT -- Ruta local a la imagen del logo
+);
+
+-- 2. Datos del Médico Remitente (Quien firma)
+CREATE TABLE medico (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    nombre_completo TEXT NOT NULL, -- Ej: Saba Efrain
+    matricula TEXT,
+    email TEXT
+);
+
+-- 3. Datos del Dueño
+CREATE TABLE propietario (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    nombre_completo TEXT NOT NULL, -- Ej: Britos Carlos
+    direccion TEXT, -- Ej: primera junta 6148
+    telefono TEXT,
+    email TEXT
+);
+
+-- 4. Datos del Paciente
+CREATE TABLE paciente (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    propietario_id INTEGER,
+    nombre TEXT NOT NULL, -- Ej: Tyson
+    especie TEXT, -- Perro, Gato, etc.
+    raza TEXT,
+    genero TEXT, -- Hembra/Macho
+    castrado INTEGER DEFAULT 0, -- 0: No, 1: Si, 2: NR (Se usa INTEGER como booleano en SQLite)
+    fecha_nacimiento TEXT, -- Para calcular la edad exacta siempre
+    peso_actual REAL, -- Ej: 35.0
+    FOREIGN KEY (propietario_id) REFERENCES propietario(id)
+);
+
+-- 5. EL PROTOCOLO (El documento central)
+CREATE TABLE protocolo (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    numero_interno TEXT, -- El "0040" de la imagen (puede ser string para ceros a la izquierda)
+    fecha_creacion DATETIME DEFAULT CURRENT_TIMESTAMP,
+    
+    -- Relaciones
+    paciente_id INTEGER,
+    medico_remitente_id INTEGER,
+    
+    -- Datos Clínicos del Formulario Central
+    edad_al_momento INTEGER, -- Guardamos la edad que tenía en ese momento (histórico)
+    peso_al_momento REAL,    -- Guardamos el peso que tenía en ese momento
+    tejidos_enviados TEXT,   -- Ej: "3 muestras por paaf"
+    anamnesis TEXT,          -- Historia clínica del momento
+    dx_presuntivo TEXT,      -- Diagnóstico clínico presuntivo
+    
+    -- Datos de la Muestra (Recuadro medio)
+    sitio_anatomico TEXT,
+    metodo_obtencion TEXT,   -- Aspirado, Punción, Impronta, Hisopado
+    laminas_enviadas INTEGER,
+    liquido_enviado_ml REAL,
+    metodo_fijacion TEXT,    -- Alcohol, Aire, Ninguno
+    
+    -- Resultados (Columna derecha inferior)
+    ruta_imagen_microscopia TEXT, -- Ruta local de la foto de la citología
+    aspecto_macroscopico TEXT,
+    aspecto_microscopico TEXT,
+    diagnostico_citologico TEXT,  -- El resultado final (Ej: Sugerente de mastocitoma...)
+    observaciones TEXT,
+    
+    FOREIGN KEY (paciente_id) REFERENCES paciente(id),
+    FOREIGN KEY (medico_remitente_id) REFERENCES medico(id)
+);
+
+-- 6. Detalles de la Lesión (El recuadro inferior izquierdo)
+-- Se separa para mantener orden, vinculado 1 a 1 con el protocolo
+CREATE TABLE evaluacion_lesion (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    protocolo_id INTEGER,
+    
+    -- Parámetros específicos
+    localizacion TEXT,      -- Piel, subcutáneo, etc.
+    tamano_largo REAL,      -- cm
+    tamano_ancho REAL,      -- cm
+    tamano_alto REAL,       -- cm
+    forma TEXT,             -- regular, irregular, otra
+    color TEXT,
+    consistencia TEXT,      -- suave, firme, dura
+    distribucion TEXT,      -- focal, multifocal, difuso
+    patron_crecimiento TEXT,-- infiltrante, pediculado, sésil
+    tasa_crecimiento TEXT,  -- rápido, lento
+    contorno TEXT,          -- elevada, plana, deprimida
+    recurrencia INTEGER,    -- 0: No, 1: Sí
+    capsula INTEGER,        -- 0: No, 1: Sí
+    
+    FOREIGN KEY (protocolo_id) REFERENCES protocolo(id) ON DELETE CASCADE
+);

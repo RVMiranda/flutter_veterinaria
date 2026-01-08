@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../config/theme.dart';
+import '../providers/router_provider.dart';
 import '../models/protocolo.dart';
 import '../viewmodel/protocolo_viewmodel.dart';
 
@@ -68,7 +69,7 @@ class _HomeViewState extends State<HomeView> {
           icon: const Icon(Icons.settings),
           onPressed: () {
             // Navegar a settings
-            // context.pushNamed('settings');
+            context.pushNamed(RouteNames.settings);
           },
         ),
       ],
@@ -117,7 +118,10 @@ class _HomeViewState extends State<HomeView> {
         icon: Icons.description_outlined,
         color: AppColors.primary,
         onTap: () {
-          // context.pushNamed('protocolEdit');
+          context.pushNamed(
+            RouteNames.protocolEdit,
+            extra: ProtocolEditParams(patientId: 0, protocolId: null),
+          );
         },
       ),
       _QuickAccessItem(
@@ -125,7 +129,7 @@ class _HomeViewState extends State<HomeView> {
         icon: Icons.pets_outlined,
         color: AppColors.secondary,
         onTap: () {
-          // context.pushNamed('clients');
+          context.pushNamed(RouteNames.clients);
         },
       ),
       _QuickAccessItem(
@@ -133,7 +137,8 @@ class _HomeViewState extends State<HomeView> {
         icon: Icons.history_outlined,
         color: const Color(0xFF5B7C99),
         onTap: () {
-          // context.pushNamed('clients');
+          // Historial completo de pacientes: ir a la lista de clientes y navegar desde allí
+          context.pushNamed(RouteNames.clients);
         },
       ),
       _QuickAccessItem(
@@ -141,7 +146,7 @@ class _HomeViewState extends State<HomeView> {
         icon: Icons.settings_outlined,
         color: const Color(0xFF6B8BA3),
         onTap: () {
-          // context.pushNamed('settings');
+          context.pushNamed(RouteNames.settings);
         },
       ),
     ];
@@ -346,12 +351,13 @@ class _HomeViewState extends State<HomeView> {
           color: AppColors.secondary,
         ),
         onTap: () {
-          // context.pushNamed('protocolEdit',
-          //   extra: ProtocolEditParams(
-          //     patientId: protocolo.pacienteId ?? 0,
-          //     protocolId: protocolo.id,
-          //   ),
-          // );
+          context.pushNamed(
+            RouteNames.protocolEdit,
+            extra: ProtocolEditParams(
+              patientId: protocolo.pacienteId ?? 0,
+              protocolId: protocolo.id,
+            ),
+          );
         },
       ),
     );
@@ -361,9 +367,10 @@ class _HomeViewState extends State<HomeView> {
   Widget _buildFAB(BuildContext context) {
     return FloatingActionButton(
       onPressed: () {
-        // context.pushNamed('protocolEdit',
-        //   extra: ProtocolEditParams(patientId: 0, protocolId: null),
-        // );
+        context.pushNamed(
+          RouteNames.protocolEdit,
+          extra: ProtocolEditParams(patientId: 0, protocolId: null),
+        );
       },
       child: const Icon(Icons.add),
     );

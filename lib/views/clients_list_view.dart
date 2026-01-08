@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../config/theme.dart';
+import '../providers/router_provider.dart';
 import '../models/propietario.dart';
 import '../viewmodel/propietario_viewmodel.dart';
 
@@ -50,8 +51,8 @@ class _ClientsListViewState extends State<ClientsListView> {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
-          // TODO: Navegar a formulario crear propietario
-          // context.pushNamed('createClient');
+          // Navegar a la vista de crear propietario
+          context.pushNamed(RouteNames.createClient);
         },
         child: const Icon(Icons.add),
       ),
@@ -170,11 +171,11 @@ class _ClientsListViewState extends State<ClientsListView> {
         ),
         trailing: const Icon(Icons.arrow_forward_ios, size: 16),
         onTap: () {
-          // TODO: Navegar a detalle del propietario
-          // context.pushNamed(
-          //   'clientDetail',
-          //   pathParameters: {'clientId': propietario.id.toString()},
-          // );
+          // Navegar a detalle del propietario
+          context.pushNamed(
+            RouteNames.clientDetail,
+            pathParameters: {'clientId': propietario.id.toString()},
+          );
         },
       ),
     );

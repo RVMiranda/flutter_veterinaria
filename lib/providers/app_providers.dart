@@ -1,6 +1,7 @@
 import 'package:flutter/widgets.dart';
 import 'package:provider/provider.dart';
 import 'package:provider/single_child_widget.dart';
+import 'router_provider.dart';
 
 import '../repository/medico_repository.dart';
 import '../repository/paciente_repository.dart';
@@ -46,6 +47,11 @@ List<SingleChildWidget> buildAppProviders({
         repository: veterinariaRepository ?? VeterinariaRepository(),
       ),
     ),
+    // Proveedor del router (GoRouter) - crear al final para que otros providers
+    // (viewmodels/repositorios) ya estén disponibles cuando GoRouter inicialice
+    // (evita problemas si alguna ruta lee providers en su builder durante
+    //  la inicialización del router).
+    routerProvider,
   ];
 }
 

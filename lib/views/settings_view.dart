@@ -5,6 +5,7 @@ import '../config/theme.dart';
 import '../models/veterinaria_info.dart';
 import '../viewmodel/veterinaria_viewmodel.dart';
 import '../viewmodel/medico_viewmodel.dart';
+import '../providers/router_provider.dart';
 
 class SettingsView extends StatefulWidget {
   const SettingsView({super.key});
@@ -205,7 +206,8 @@ class _SettingsViewState extends State<SettingsView> {
               ),
               ElevatedButton.icon(
                 onPressed: () {
-                  // TODO: Abrir diálogo para agregar médico
+                  // Navegar a la vista para crear médico
+                  context.pushNamed(RouteNames.createMedico);
                 },
                 icon: const Icon(Icons.add),
                 label: const Text('Agregar'),

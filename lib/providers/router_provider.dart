@@ -6,6 +6,11 @@ import '../views/settings_view.dart';
 import '../views/clients_list_view.dart';
 import '../views/client_detail_view.dart';
 import '../views/patient_history_view.dart';
+import '../views/create_client_view.dart';
+import '../views/edit_client_view.dart';
+import '../views/create_patient_view.dart';
+import '../views/edit_patient_view.dart';
+import '../views/create_medico_view.dart';
 import '../views/protocol_edit_view.dart';
 import '../views/protocol_preview_view.dart';
 
@@ -19,13 +24,32 @@ abstract class RoutePaths {
   // Propietarios (Clientes)
   static const String clients = '/clients';
   static const String clientDetail = '/clients/:clientId';
+  static const String createClient = '/clients/create';
 
   // Pacientes
   static const String patientHistory = '/clients/:clientId/patient/:patientId';
+  static const String createPatient = '/clients/:clientId/patient/create';
 
   // Protocolos
   static const String protocolEdit = '/protocol/edit';
   static const String protocolPreview = '/protocol/preview';
+}
+
+/// Nombres (identificadores) de rutas usados por GoRouter
+/// Se usan como 'name' en las definiciones de GoRoute
+abstract class RouteNames {
+  static const String home = 'home';
+  static const String settings = 'settings';
+  static const String clients = 'clients';
+  static const String createClient = 'createClient';
+  static const String editClient = 'editClient';
+  static const String clientDetail = 'clientDetail';
+  static const String createPatient = 'createPatient';
+  static const String editPatient = 'editPatient';
+  static const String patientHistory = 'patientHistory';
+  static const String createMedico = 'createMedico';
+  static const String protocolEdit = 'protocolEdit';
+  static const String protocolPreview = 'protocolPreview';
 }
 
 /// Class para encapsular parámetros de navegación
@@ -47,7 +71,7 @@ final routerProvider = Provider<GoRouter>(
       // ============ HOME / DASHBOARD ============
       GoRoute(
         path: RoutePaths.home,
-        name: 'home',
+        name: RouteNames.home,
         builder: (context, state) {
           return const HomeView();
         },
@@ -55,33 +79,72 @@ final routerProvider = Provider<GoRouter>(
           // ============ SETTINGS ============
           GoRoute(
             path: 'settings',
-            name: 'settings',
+            name: RouteNames.settings,
             builder: (context, state) {
               return const SettingsView();
             },
+            routes: [
+              GoRoute(
+                path: 'medicos/create',
+                name: RouteNames.createMedico,
+                builder: (context, state) {
+                  return const CreateMedicoView();
+                },
+              ),
+            ],
           ),
 
           // ============ CLIENTS / PROPIETARIOS ============
           GoRoute(
             path: 'clients',
-            name: 'clients',
+            name: RouteNames.clients,
             builder: (context, state) {
               return const ClientsListView();
             },
             routes: [
+              // Crear nuevo propietario
+              GoRoute(
+                path: 'create',
+                name: RouteNames.createClient,
+                builder: (context, state) {
+                  return const CreateClientView();
+                },
+              ),
               // ============ CLIENT DETAIL ============
               GoRoute(
                 path: ':clientId',
-                name: 'clientDetail',
+                name: RouteNames.clientDetail,
                 builder: (context, state) {
                   final clientId = int.parse(state.pathParameters['clientId']!);
                   return ClientDetailView(clientId: clientId);
                 },
                 routes: [
+                  // Edit propietario
+                  GoRoute(
+                    path: 'edit',
+                    name: RouteNames.editClient,
+                    builder: (context, state) {
+                      final clientId = int.parse(
+                        state.pathParameters['clientId']!,
+                      );
+                      return EditClientView(clientId: clientId);
+                    },
+                  ),
+                  // Crear paciente para un propietario
+                  GoRoute(
+                    path: 'patient/create',
+                    name: RouteNames.createPatient,
+                    builder: (context, state) {
+                      final clientId = int.parse(
+                        state.pathParameters['clientId']!,
+                      );
+                      return CreatePatientView(clientId: clientId);
+                    },
+                  ),
                   // ============ PATIENT HISTORY ============
                   GoRoute(
                     path: 'patient/:patientId',
-                    name: 'patientHistory',
+                    name: RouteNames.patientHistory,
                     builder: (context, state) {
                       final clientId = int.parse(
                         state.pathParameters['clientId']!,
@@ -90,6 +153,23 @@ final routerProvider = Provider<GoRouter>(
                         state.pathParameters['patientId']!,
                       );
                       return PatientHistoryView(
+                        clientId: clientId,
+                        patientId: patientId,
+                      );
+                    },
+                  ),
+                  // Edit patient
+                  GoRoute(
+                    path: 'patient/:patientId/edit',
+                    name: RouteNames.editPatient,
+                    builder: (context, state) {
+                      final clientId = int.parse(
+                        state.pathParameters['clientId']!,
+                      );
+                      final patientId = int.parse(
+                        state.pathParameters['patientId']!,
+                      );
+                      return EditPatientView(
                         clientId: clientId,
                         patientId: patientId,
                       );
@@ -105,7 +185,7 @@ final routerProvider = Provider<GoRouter>(
       // ============ PROTOCOL EDIT ============
       GoRoute(
         path: RoutePaths.protocolEdit,
-        name: 'protocolEdit',
+        name: RouteNames.protocolEdit,
         builder: (context, state) {
           // Recibe parámetros mediante 'extra'
           // extra: ProtocolEditParams(patientId: 1, protocolId: null)
@@ -132,7 +212,7 @@ final routerProvider = Provider<GoRouter>(
       // ============ PROTOCOL PREVIEW ============
       GoRoute(
         path: RoutePaths.protocolPreview,
-        name: 'protocolPreview',
+        name: RouteNames.protocolPreview,
         builder: (context, state) {
           // Recibe el ID del protocolo a previsualizar
           final protocolId = int.parse(

@@ -3,7 +3,11 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../config/theme.dart';
 import '../viewmodel/protocolo_viewmodel.dart';
+import '../viewmodel/medico_viewmodel.dart';
 import '../viewmodel/paciente_viewmodel.dart';
+import '../models/protocolo.dart';
+import '../models/evaluacion_lesion.dart';
+import '../providers/router_provider.dart';
 
 class ProtocolEditView extends StatefulWidget {
   final int patientId;
@@ -45,6 +49,7 @@ class _ProtocolEditViewState extends State<ProtocolEditView> {
   late TextEditingController _patronCrecimientoController;
   late TextEditingController _tasaCrecimientoController;
   late TextEditingController _contornoController;
+  int? _selectedMedicoId;
 
   @override
   void initState() {
@@ -77,7 +82,16 @@ class _ProtocolEditViewState extends State<ProtocolEditView> {
     _contornoController = TextEditingController();
 
     Future.microtask(() {
-      context.read<PacienteViewModel>().cargarDetalle(widget.patientId);
+      if (widget.patientId == 0) {
+        // Mostrar lista de pacientes para seleccionar
+        context.read<PacienteViewModel>().cargarTodos();
+      } else {
+        context.read<PacienteViewModel>().cargarDetalle(widget.patientId);
+      }
+
+      // Cargar lista de médicos para el dropdown
+      context.read<MedicoViewModel>().cargarTodos();
+
       if (widget.protocolId != null) {
         context.read<ProtocoloViewModel>().cargarDetalle(widget.protocolId!);
       }
@@ -202,6 +216,59 @@ class _ProtocolEditViewState extends State<ProtocolEditView> {
           return const Center(child: CircularProgressIndicator());
         }
 
+        // Si estamos creando un protocolo nuevo sin patientId, mostramos lista de pacientes
+        if (widget.patientId == 0) {
+          final pacientes = viewModel.pacientes;
+          if (pacientes.isEmpty) {
+            return Center(
+              child: Padding(
+                padding: const EdgeInsets.all(32),
+                child: Column(
+                  children: [
+                    Icon(
+                      Icons.pets_outlined,
+                      size: 48,
+                      color: AppColors.border,
+                    ),
+                    const SizedBox(height: 12),
+                    Text(
+                      'No hay pacientes registrados',
+                      style: GoogleFonts.lato(
+                        color: AppColors.textDark.withOpacity(0.6),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          }
+
+          return ListView.builder(
+            padding: const EdgeInsets.all(16),
+            itemCount: pacientes.length,
+            itemBuilder: (context, index) {
+              final p = pacientes[index];
+              return Card(
+                margin: const EdgeInsets.only(bottom: 12),
+                child: ListTile(
+                  title: Text(p.nombre),
+                  subtitle: Text(p.especie ?? ''),
+                  onTap: () async {
+                    await context.read<PacienteViewModel>().cargarDetalle(
+                      p.id!,
+                    );
+                    // Avanzar al formulario de protocolo
+                    _pageController.nextPage(
+                      duration: const Duration(milliseconds: 300),
+                      curve: Curves.easeInOut,
+                    );
+                  },
+                ),
+              );
+            },
+          );
+        }
+
         final paciente = viewModel.seleccionado;
         if (paciente == null) {
           return const Center(child: Text('Paciente no encontrado'));
@@ -315,6 +382,33 @@ class _ProtocolEditViewState extends State<ProtocolEditView> {
                   decoration: const InputDecoration(
                     labelText: 'Método de Fijación',
                   ),
+                ),
+                const SizedBox(height: 12),
+                // Selector de Médico remitente
+                Consumer<MedicoViewModel>(
+                  builder: (context, medicoVM, _) {
+                    final medicos = medicoVM.medicos;
+                    return DropdownButtonFormField<int>(
+                      decoration: const InputDecoration(
+                        labelText: 'Médico Remitente (opcional)',
+                      ),
+                      items: medicos
+                          .map(
+                            (m) => DropdownMenuItem<int>(
+                              value: m.id,
+                              child: Text(m.nombreCompleto),
+                            ),
+                          )
+                          .toList(),
+                      onChanged: (value) {
+                        // Guardar selección en el estado temporal
+                        setState(() {
+                          _selectedMedicoId = value;
+                        });
+                      },
+                      value: _selectedMedicoId,
+                    );
+                  },
                 ),
               ],
             ),
@@ -457,9 +551,136 @@ class _ProtocolEditViewState extends State<ProtocolEditView> {
   }
 
   void _guardarProtocolo() {
-    // TODO: Implementar guardado de protocolo
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Protocolo guardado exitosamente')),
+    // Construir objeto Protocolo desde los controllers
+    final pacienteId = widget.patientId == 0
+        ? context.read<PacienteViewModel>().seleccionado?.id
+        : widget.patientId;
+
+    if (pacienteId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Seleccione un paciente antes de guardar'),
+        ),
+      );
+      return;
+    }
+
+    // Obtener datos clínicos del paciente para guardar en el protocolo
+    final paciente = context.read<PacienteViewModel>().seleccionado;
+
+    final protocolo = Protocolo(
+      id: widget.protocolId,
+      pacienteId: pacienteId,
+      medicoRemitenteId: _selectedMedicoId,
+      edadAlMomento: paciente?.calcularEdad(),
+      pesoAlMomento: paciente?.pesoActual,
+      tejidosEnviados: _tejidosController.text.isEmpty
+          ? null
+          : _tejidosController.text,
+      anamnesis: _anamnesesController.text.isEmpty
+          ? null
+          : _anamnesesController.text,
+      dxPresuntivo: _dxPresuntivoController.text.isEmpty
+          ? null
+          : _dxPresuntivoController.text,
+      sitioAnatomico: _sitioAnastomicoController.text.isEmpty
+          ? null
+          : _sitioAnastomicoController.text,
+      metodoObtencion: _metodoObtencionController.text.isEmpty
+          ? null
+          : _metodoObtencionController.text,
+      laminasEnviadas: int.tryParse(_laminasController.text),
+      liquidoEnviadoMl: double.tryParse(_liquidoController.text),
+      metodoFijacion: _metodoFijacionController.text.isEmpty
+          ? null
+          : _metodoFijacionController.text,
+      aspectoMacroscopico: _aspectoMacroscopicoController.text.isEmpty
+          ? null
+          : _aspectoMacroscopicoController.text,
+      aspectoMicroscopico: _aspectoMicroscopicoController.text.isEmpty
+          ? null
+          : _aspectoMicroscopicoController.text,
+      diagnosticoCitologico: _diagnosticoCitologicoController.text.isEmpty
+          ? null
+          : _diagnosticoCitologicoController.text,
+      observaciones: _observacionesController.text.isEmpty
+          ? null
+          : _observacionesController.text,
     );
+
+    final evaluacion = EvaluacionLesion(
+      localizacion: _localizacionController.text.isEmpty
+          ? null
+          : _localizacionController.text,
+      tamanoLargo: double.tryParse(_tamanoLargoController.text),
+      tamanoAncho: double.tryParse(_tamanoAnchoController.text),
+      tamanoAlto: double.tryParse(_tamanoAltoController.text),
+      forma: _formaController.text.isEmpty ? null : _formaController.text,
+      color: _colorController.text.isEmpty ? null : _colorController.text,
+      consistencia: _consistenciaController.text.isEmpty
+          ? null
+          : _consistenciaController.text,
+      distribucion: _distribucionController.text.isEmpty
+          ? null
+          : _distribucionController.text,
+      patronCrecimiento: _patronCrecimientoController.text.isEmpty
+          ? null
+          : _patronCrecimientoController.text,
+      tasaCrecimiento: _tasaCrecimientoController.text.isEmpty
+          ? null
+          : _tasaCrecimientoController.text,
+      contorno: _contornoController.text.isEmpty
+          ? null
+          : _contornoController.text,
+    );
+
+    // Ejecutar guardado (crear o actualizar)
+    final protocoloVM = context.read<ProtocoloViewModel>();
+
+    if (widget.protocolId == null) {
+      protocoloVM
+          .crearProtocolo(protocolo: protocolo, evaluacionLesion: evaluacion)
+          .then((id) {
+            if (!mounted) return;
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Protocolo guardado exitosamente')),
+            );
+            // Navegar a la vista de preview del protocolo (reemplazando la ruta de edición)
+            context.goNamed(
+              'protocolPreview',
+              queryParameters: {'protocolId': id.toString()},
+            );
+          })
+          .catchError((err) {
+            if (!mounted) return;
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('Error al guardar protocolo: $err')),
+            );
+          });
+    } else {
+      protocoloVM
+          .actualizarProtocolo(
+            protocolo: protocolo,
+            evaluacionLesion: evaluacion,
+          )
+          .then((_) {
+            if (!mounted) return;
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Protocolo actualizado exitosamente'),
+              ),
+            );
+            context.goNamed(
+              'protocolPreview',
+              queryParameters: {'protocolId': widget.protocolId.toString()},
+            );
+          })
+          .catchError((err) {
+            if (!mounted) return;
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('Error al actualizar protocolo: $err')),
+            );
+          });
+    }
   }
 }
