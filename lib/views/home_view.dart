@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../config/theme.dart';
@@ -133,12 +134,11 @@ class _HomeViewState extends State<HomeView> {
         },
       ),
       _QuickAccessItem(
-        title: 'Historial',
-        icon: Icons.history_outlined,
+        title: 'Todos',
+        icon: Icons.format_list_bulleted_outlined,
         color: const Color(0xFF5B7C99),
         onTap: () {
-          // Historial completo de pacientes: ir a la lista de clientes y navegar desde allí
-          context.pushNamed(RouteNames.clients);
+          context.pushNamed(RouteNames.allProtocols);
         },
       ),
       _QuickAccessItem(

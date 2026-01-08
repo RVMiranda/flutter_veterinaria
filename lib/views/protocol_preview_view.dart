@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../config/theme.dart';
+import '../providers/router_provider.dart';
 import '../viewmodel/protocolo_viewmodel.dart';
 import '../viewmodel/veterinaria_viewmodel.dart';
 import '../viewmodel/medico_viewmodel.dart';
@@ -20,8 +21,37 @@ class _ProtocolPreviewViewState extends State<ProtocolPreviewView> {
   @override
   void initState() {
     super.initState();
-    Future.microtask(() {
-      context.read<ProtocoloViewModel>().cargarDetalle(widget.protocolId);
+    _cargarDatos();
+  }
+
+  @override
+  void didUpdateWidget(ProtocolPreviewView oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.protocolId != widget.protocolId) {
+      _cargarDatos();
+    }
+  }
+
+  void _cargarDatos() {
+    Future.microtask(() async {
+      await context.read<ProtocoloViewModel>().cargarDetalle(widget.protocolId);
+      if (!mounted) return;
+
+      final vetVM = context.read<VeterinariaViewModel>();
+      if (vetVM.info == null) {
+        await vetVM.cargarInformacion();
+      }
+
+      if (!mounted) return;
+      final protocolo = context.read<ProtocoloViewModel>().seleccionado;
+      if (protocolo != null && protocolo.medicoRemitenteId != null) {
+        final medicoVM = context.read<MedicoViewModel>();
+        // Solo cargar si no es el que ya tenemos o no tenemos ninguno
+        if (medicoVM.seleccionado == null ||
+            medicoVM.seleccionado!.id != protocolo.medicoRemitenteId) {
+          await medicoVM.cargarDetalle(protocolo.medicoRemitenteId!);
+        }
+      }
     });
   }
 
@@ -112,6 +142,28 @@ class _ProtocolPreviewViewState extends State<ProtocolPreviewView> {
         elevation: 0,
         actions: [
           IconButton(
+            icon: const Icon(Icons.edit_outlined),
+            onPressed: () {
+              final protocolo = context.read<ProtocoloViewModel>().seleccionado;
+              if (protocolo != null && protocolo.pacienteId != null) {
+                context.pushNamed(
+                  RouteNames.protocolEdit,
+                  extra: ProtocolEditParams(
+                    patientId: protocolo.pacienteId!,
+                    protocolId: widget.protocolId,
+                  ),
+                );
+              } else {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Información no disponible para editar'),
+                  ),
+                );
+              }
+            },
+            tooltip: 'Editar Protocolo',
+          ),
+          IconButton(
             icon: const Icon(Icons.delete_outline),
             onPressed: () {
               _showDeleteConfirmation();
@@ -138,21 +190,6 @@ class _ProtocolPreviewViewState extends State<ProtocolPreviewView> {
           if (protocolo == null) {
             return const Center(child: Text('Protocolo no encontrado'));
           }
-
-          // Cargar información de veterinaria y del médico si es necesario
-          Future.microtask(() async {
-            final vetVM = context.read<VeterinariaViewModel>();
-            if (vetVM.info == null) {
-              await vetVM.cargarInformacion();
-            }
-            if (protocolo.medicoRemitenteId != null) {
-              final medicoVM = context.read<MedicoViewModel>();
-              if (medicoVM.seleccionado == null ||
-                  medicoVM.seleccionado!.id != protocolo.medicoRemitenteId) {
-                await medicoVM.cargarDetalle(protocolo.medicoRemitenteId!);
-              }
-            }
-          });
 
           return SingleChildScrollView(
             child: Padding(

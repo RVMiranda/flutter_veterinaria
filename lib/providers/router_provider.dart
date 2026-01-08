@@ -13,6 +13,7 @@ import '../views/edit_patient_view.dart';
 import '../views/create_medico_view.dart';
 import '../views/protocol_edit_view.dart';
 import '../views/protocol_preview_view.dart';
+import '../views/all_protocols_view.dart';
 
 /// Constantes de rutas para toda la aplicación
 /// Facilita el acceso desde cualquier parte sin tener que hardcodear strings
@@ -50,6 +51,7 @@ abstract class RouteNames {
   static const String createMedico = 'createMedico';
   static const String protocolEdit = 'protocolEdit';
   static const String protocolPreview = 'protocolPreview';
+  static const String allProtocols = 'allProtocols';
 }
 
 /// Class para encapsular parámetros de navegación
@@ -222,6 +224,15 @@ final routerProvider = Provider<GoRouter>(
           return ProtocolPreviewView(protocolId: protocolId);
         },
       ),
+
+      // ============ ALL PROTOCOLS ============
+      GoRoute(
+        path: '/protocols',
+        name: RouteNames.allProtocols,
+        builder: (context, state) {
+          return const AllProtocolsView();
+        },
+      ),
     ],
 
     // Manejador de errores
@@ -233,49 +244,3 @@ final routerProvider = Provider<GoRouter>(
     },
   ),
 );
-
-/// Extensión para facilitar navegación desde cualquier parte
-/// Uso: context.pushNamed('home')
-extension GoRouterExtension on BuildContext {
-  void pushNamed(
-    String name, {
-    Map<String, String> pathParameters = const {},
-    Map<String, dynamic> queryParameters = const {},
-    Object? extra,
-  }) {
-    GoRouter.of(this).pushNamed(
-      name,
-      pathParameters: pathParameters,
-      queryParameters: queryParameters,
-      extra: extra,
-    );
-  }
-
-  void replaceNamed(
-    String name, {
-    Map<String, String> pathParameters = const {},
-    Map<String, dynamic> queryParameters = const {},
-    Object? extra,
-  }) {
-    GoRouter.of(this).replaceNamed(
-      name,
-      pathParameters: pathParameters,
-      queryParameters: queryParameters,
-      extra: extra,
-    );
-  }
-
-  void goNamed(
-    String name, {
-    Map<String, String> pathParameters = const {},
-    Map<String, dynamic> queryParameters = const {},
-    Object? extra,
-  }) {
-    GoRouter.of(this).goNamed(
-      name,
-      pathParameters: pathParameters,
-      queryParameters: queryParameters,
-      extra: extra,
-    );
-  }
-}

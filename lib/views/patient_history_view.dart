@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../config/theme.dart';
@@ -339,13 +340,11 @@ class _PatientHistoryViewState extends State<PatientHistoryView> {
         ),
         trailing: const Icon(Icons.arrow_forward_ios, size: 16),
         onTap: () {
-          // TODO: Navegar a editar protocolo
-          // context.pushNamed('protocolEdit',
-          //   extra: ProtocolEditParams(
-          //     patientId: widget.patientId,
-          //     protocolId: protocolo.id,
-          //   ),
-          // );
+          // Navegar a preview
+          context.pushNamed(
+            RouteNames.protocolPreview,
+            queryParameters: {'protocolId': protocolo.id.toString()},
+          );
         },
       ),
     );

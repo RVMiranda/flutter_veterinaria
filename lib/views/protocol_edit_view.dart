@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../config/theme.dart';
@@ -677,8 +678,23 @@ class _ProtocolEditViewState extends State<ProtocolEditView> {
     // Obtener datos clínicos del paciente para guardar en el protocolo
     final paciente = context.read<PacienteViewModel>().seleccionado;
 
+    // Si estamos editando, preservar datos que no se editan en el formulario
+    String? numeroInternoExistente;
+    String? fechaCreacionExistente;
+
+    if (widget.protocolId != null) {
+      final protocoloOriginal = context.read<ProtocoloViewModel>().seleccionado;
+      if (protocoloOriginal != null &&
+          protocoloOriginal.id == widget.protocolId) {
+        numeroInternoExistente = protocoloOriginal.numeroInterno;
+        fechaCreacionExistente = protocoloOriginal.fechaCreacion;
+      }
+    }
+
     final protocolo = Protocolo(
       id: widget.protocolId,
+      numeroInterno: numeroInternoExistente,
+      fechaCreacion: fechaCreacionExistente,
       pacienteId: pacienteId,
       medicoRemitenteId: _selectedMedicoId,
       edadAlMomento: paciente?.calcularEdad(),
