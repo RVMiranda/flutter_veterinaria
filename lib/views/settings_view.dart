@@ -32,10 +32,12 @@ class _SettingsViewState extends State<SettingsView> {
     _emailContactoController = TextEditingController();
 
     Future.microtask(() {
-      final veterinariaVM = context.read<VeterinariaViewModel>();
-      final medicoVM = context.read<MedicoViewModel>();
-      veterinariaVM.cargarInformacion();
-      medicoVM.cargarTodos();
+      if (mounted) {
+        final veterinariaVM = context.read<VeterinariaViewModel>();
+        final medicoVM = context.read<MedicoViewModel>();
+        veterinariaVM.cargarInformacion();
+        medicoVM.cargarTodos();
+      }
     });
   }
 
@@ -229,7 +231,7 @@ class _SettingsViewState extends State<SettingsView> {
                     child: Text(
                       'No hay médicos registrados',
                       style: GoogleFonts.lato(
-                        color: AppColors.textDark.withOpacity(0.6),
+                        color: AppColors.textDark.withValues(alpha: 0.6),
                       ),
                     ),
                   ),
@@ -249,7 +251,7 @@ class _SettingsViewState extends State<SettingsView> {
                         width: 50,
                         height: 50,
                         decoration: BoxDecoration(
-                          color: AppColors.primary.withOpacity(0.1),
+                          color: AppColors.primary.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: const Icon(Icons.person_outline),

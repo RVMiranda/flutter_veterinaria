@@ -22,7 +22,9 @@ class _AllProtocolsViewState extends State<AllProtocolsView> {
   void initState() {
     super.initState();
     Future.microtask(() {
-      context.read<ProtocoloViewModel>().cargarTodos();
+      if (mounted) {
+        context.read<ProtocoloViewModel>().cargarTodos();
+      }
     });
   }
 
@@ -102,7 +104,7 @@ class _AllProtocolsViewState extends State<AllProtocolsView> {
                     child: Text(
                       'No se encontraron protocolos',
                       style: GoogleFonts.lato(
-                        color: AppColors.textDark.withOpacity(0.6),
+                        color: AppColors.textDark.withValues(alpha: 0.6),
                       ),
                     ),
                   );
@@ -139,7 +141,7 @@ class _AllProtocolsViewState extends State<AllProtocolsView> {
           width: 50,
           height: 50,
           decoration: BoxDecoration(
-            color: AppColors.primary.withOpacity(0.1),
+            color: AppColors.primary.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(8),
           ),
           child: Center(
@@ -172,7 +174,7 @@ class _AllProtocolsViewState extends State<AllProtocolsView> {
               overflow: TextOverflow.ellipsis,
               style: GoogleFonts.lato(
                 fontSize: 12,
-                color: AppColors.textDark.withOpacity(0.7),
+                color: AppColors.textDark.withValues(alpha: 0.7),
               ),
             ),
             const SizedBox(height: 4),
@@ -180,7 +182,7 @@ class _AllProtocolsViewState extends State<AllProtocolsView> {
               fechaFormato,
               style: GoogleFonts.lato(
                 fontSize: 11,
-                color: AppColors.textDark.withOpacity(0.5),
+                color: AppColors.textDark.withValues(alpha: 0.5),
               ),
             ),
           ],

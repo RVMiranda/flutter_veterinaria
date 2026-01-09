@@ -22,8 +22,10 @@ class _ClientDetailViewState extends State<ClientDetailView> {
   void initState() {
     super.initState();
     Future.microtask(() {
-      context.read<PropietarioViewModel>().cargarDetalle(widget.clientId);
-      context.read<PacienteViewModel>().cargarPorPropietario(widget.clientId);
+      if (mounted) {
+        context.read<PropietarioViewModel>().cargarDetalle(widget.clientId);
+        context.read<PacienteViewModel>().cargarPorPropietario(widget.clientId);
+      }
     });
   }
 
@@ -97,7 +99,7 @@ class _ClientDetailViewState extends State<ClientDetailView> {
                         width: 60,
                         height: 60,
                         decoration: BoxDecoration(
-                          color: AppColors.secondary.withOpacity(0.1),
+                          color: AppColors.secondary.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: const Center(
@@ -169,7 +171,7 @@ class _ClientDetailViewState extends State<ClientDetailView> {
               label,
               style: GoogleFonts.lato(
                 fontSize: 12,
-                color: AppColors.textDark.withOpacity(0.6),
+                color: AppColors.textDark.withValues(alpha: 0.6),
               ),
             ),
             Text(
@@ -221,7 +223,7 @@ class _ClientDetailViewState extends State<ClientDetailView> {
                         Text(
                           'No hay mascotas registradas',
                           style: GoogleFonts.lato(
-                            color: AppColors.textDark.withOpacity(0.6),
+                            color: AppColors.textDark.withValues(alpha: 0.6),
                           ),
                         ),
                       ],
@@ -256,7 +258,7 @@ class _ClientDetailViewState extends State<ClientDetailView> {
           width: 50,
           height: 50,
           decoration: BoxDecoration(
-            color: AppColors.primary.withOpacity(0.1),
+            color: AppColors.primary.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(8),
           ),
           child: const Center(
@@ -277,15 +279,17 @@ class _ClientDetailViewState extends State<ClientDetailView> {
               child: const Text('Editar'),
               onTap: () {
                 // Navegar a editar paciente
-                Future.microtask(
-                  () => context.pushNamed(
-                    RouteNames.editPatient,
-                    pathParameters: {
-                      'clientId': widget.clientId.toString(),
-                      'patientId': paciente.id.toString(),
-                    },
-                  ),
-                );
+                Future.microtask(() {
+                  if (context.mounted) {
+                    context.pushNamed(
+                      RouteNames.editPatient,
+                      pathParameters: {
+                        'clientId': widget.clientId.toString(),
+                        'patientId': paciente.id.toString(),
+                      },
+                    );
+                  }
+                });
               },
             ),
             PopupMenuItem(
@@ -293,6 +297,7 @@ class _ClientDetailViewState extends State<ClientDetailView> {
               onTap: () async {
                 // Confirmar eliminación
                 Future.microtask(() async {
+                  if (!context.mounted) return;
                   final confirm = await showDialog<bool>(
                     context: context,
                     builder: (dCtx) => AlertDialog(
@@ -314,20 +319,21 @@ class _ClientDetailViewState extends State<ClientDetailView> {
                   );
 
                   if (confirm == true) {
+                    if (!context.mounted) return;
                     try {
                       await context.read<PacienteViewModel>().eliminarPaciente(
                         paciente.id!,
                       );
-                      if (!mounted) return;
+                      if (!context.mounted) return;
                       await context
                           .read<PacienteViewModel>()
                           .cargarPorPropietario(widget.clientId);
-                      if (!mounted) return;
+                      if (!context.mounted) return;
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(content: Text('Mascota eliminada')),
                       );
                     } catch (e) {
-                      if (!mounted) return;
+                      if (!context.mounted) return;
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
                           content: Text('Error al eliminar: ${e.toString()}'),

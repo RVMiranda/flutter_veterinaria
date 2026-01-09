@@ -52,16 +52,20 @@ class _CreateClientViewState extends State<CreateClientView> {
         nuevo,
       );
       // Navegar al detalle del propietario recién creado
-      context.pushNamed(
-        RouteNames.clientDetail,
-        pathParameters: {'clientId': id.toString()},
-      );
+      if (mounted) {
+        context.pushNamed(
+          RouteNames.clientDetail,
+          pathParameters: {'clientId': id.toString()},
+        );
+      }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error al guardar propietario: ${e.toString()}'),
-        ),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error al guardar propietario: ${e.toString()}'),
+          ),
+        );
+      }
     }
   }
 

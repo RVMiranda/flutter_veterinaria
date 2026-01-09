@@ -8,7 +8,6 @@ import '../viewmodel/medico_viewmodel.dart';
 import '../viewmodel/paciente_viewmodel.dart';
 import '../models/protocolo.dart';
 import '../models/evaluacion_lesion.dart';
-import '../providers/router_provider.dart';
 
 class ProtocolEditView extends StatefulWidget {
   final int patientId;
@@ -82,24 +81,27 @@ class _ProtocolEditViewState extends State<ProtocolEditView> {
     _tasaCrecimientoController = TextEditingController();
     _contornoController = TextEditingController();
 
-    Future.microtask(() {
+    Future.microtask(() async {
+      if (!mounted) return;
       if (widget.patientId == 0) {
         // Mostrar lista de pacientes para seleccionar
-        context.read<PacienteViewModel>().cargarTodos();
+        await context.read<PacienteViewModel>().cargarTodos();
       } else {
-        context.read<PacienteViewModel>().cargarDetalle(widget.patientId);
+        await context.read<PacienteViewModel>().cargarDetalle(widget.patientId);
       }
 
+      if (!mounted) return;
       // Cargar lista de médicos para el dropdown
-      context.read<MedicoViewModel>().cargarTodos();
+      await context.read<MedicoViewModel>().cargarTodos();
 
+      if (!mounted) return;
       if (widget.protocolId != null) {
-        context
-            .read<ProtocoloViewModel>()
-            .cargarDetalle(widget.protocolId!)
-            .then((_) {
-              _populateControllersFromProtocol();
-            });
+        await context.read<ProtocoloViewModel>().cargarDetalle(
+          widget.protocolId!,
+        );
+        if (mounted) {
+          _populateControllersFromProtocol();
+        }
       }
     });
   }
@@ -287,7 +289,7 @@ class _ProtocolEditViewState extends State<ProtocolEditView> {
                     Text(
                       'No hay pacientes registrados',
                       style: GoogleFonts.lato(
-                        color: AppColors.textDark.withOpacity(0.6),
+                        color: AppColors.textDark.withValues(alpha: 0.6),
                       ),
                     ),
                   ],
@@ -459,6 +461,7 @@ class _ProtocolEditViewState extends State<ProtocolEditView> {
                           _selectedMedicoId = value;
                         });
                       },
+                      // ignore: deprecated_member_use
                       value: _selectedMedicoId,
                     );
                   },
@@ -607,7 +610,7 @@ class _ProtocolEditViewState extends State<ProtocolEditView> {
           label,
           style: GoogleFonts.lato(
             fontSize: 14,
-            color: AppColors.textDark.withOpacity(0.7),
+            color: AppColors.textDark.withValues(alpha: 0.7),
           ),
         ),
         Text(

@@ -67,17 +67,21 @@ class _CreatePatientViewState extends State<CreatePatientView> {
         paciente,
       );
       // Navegar al historial del paciente recién creado
-      context.pushNamed(
-        RouteNames.patientHistory,
-        pathParameters: {
-          'clientId': widget.clientId.toString(),
-          'patientId': id.toString(),
-        },
-      );
+      if (mounted) {
+        context.pushNamed(
+          RouteNames.patientHistory,
+          pathParameters: {
+            'clientId': widget.clientId.toString(),
+            'patientId': id.toString(),
+          },
+        );
+      }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error al guardar mascota: ${e.toString()}')),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error al guardar mascota: ${e.toString()}')),
+        );
+      }
     }
   }
 

@@ -33,7 +33,7 @@ class AppTheme {
         seedColor: AppColors.primary,
         primary: AppColors.primary,
         secondary: AppColors.secondary,
-        background: AppColors.background,
+        surface: AppColors.background,
         brightness: Brightness.light,
       ),
       // ============ AppBar ============
@@ -130,7 +130,7 @@ class AppTheme {
         labelStyle: GoogleFonts.lato(fontSize: 14, color: AppColors.textDark),
         hintStyle: GoogleFonts.lato(
           fontSize: 14,
-          color: AppColors.textDark.withOpacity(0.5),
+          color: AppColors.textDark.withValues(alpha: 0.5),
         ),
         prefixIconColor: AppColors.secondary,
         suffixIconColor: AppColors.secondary,

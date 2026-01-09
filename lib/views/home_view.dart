@@ -22,7 +22,9 @@ class _HomeViewState extends State<HomeView> {
     super.initState();
     // Cargar todos los protocolos al iniciar
     Future.microtask(() {
-      context.read<ProtocoloViewModel>().cargarTodos();
+      if (mounted) {
+        context.read<ProtocoloViewModel>().cargarTodos();
+      }
     });
   }
 
@@ -182,8 +184,8 @@ class _HomeViewState extends State<HomeView> {
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
               colors: [
-                item.color.withOpacity(0.1),
-                item.color.withOpacity(0.05),
+                item.color.withValues(alpha: 0.1),
+                item.color.withValues(alpha: 0.05),
               ],
             ),
           ),
@@ -259,7 +261,7 @@ class _HomeViewState extends State<HomeView> {
                           'No hay protocolos aún',
                           style: GoogleFonts.lato(
                             fontSize: 14,
-                            color: AppColors.textDark.withOpacity(0.6),
+                            color: AppColors.textDark.withValues(alpha: 0.6),
                           ),
                         ),
                       ],
@@ -300,7 +302,7 @@ class _HomeViewState extends State<HomeView> {
           width: 50,
           height: 50,
           decoration: BoxDecoration(
-            color: AppColors.primary.withOpacity(0.1),
+            color: AppColors.primary.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(8),
           ),
           child: Center(
@@ -333,7 +335,7 @@ class _HomeViewState extends State<HomeView> {
               overflow: TextOverflow.ellipsis,
               style: GoogleFonts.lato(
                 fontSize: 12,
-                color: AppColors.textDark.withOpacity(0.7),
+                color: AppColors.textDark.withValues(alpha: 0.7),
               ),
             ),
             const SizedBox(height: 4),
@@ -341,7 +343,7 @@ class _HomeViewState extends State<HomeView> {
               fechaFormato,
               style: GoogleFonts.lato(
                 fontSize: 11,
-                color: AppColors.textDark.withOpacity(0.5),
+                color: AppColors.textDark.withValues(alpha: 0.5),
               ),
             ),
           ],

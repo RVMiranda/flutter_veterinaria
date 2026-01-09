@@ -1,12 +1,17 @@
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
+import 'package:printing/printing.dart';
+import 'package:flutter_file_dialog/flutter_file_dialog.dart';
+import '../utils/pdf_generator.dart';
 import '../config/theme.dart';
 import '../providers/router_provider.dart';
 import '../viewmodel/protocolo_viewmodel.dart';
 import '../viewmodel/veterinaria_viewmodel.dart';
 import '../viewmodel/medico_viewmodel.dart';
+import '../viewmodel/paciente_viewmodel.dart';
 
 class ProtocolPreviewView extends StatefulWidget {
   final int protocolId;
@@ -34,6 +39,7 @@ class _ProtocolPreviewViewState extends State<ProtocolPreviewView> {
 
   void _cargarDatos() {
     Future.microtask(() async {
+      if (!mounted) return;
       await context.read<ProtocoloViewModel>().cargarDetalle(widget.protocolId);
       if (!mounted) return;
 
@@ -44,12 +50,25 @@ class _ProtocolPreviewViewState extends State<ProtocolPreviewView> {
 
       if (!mounted) return;
       final protocolo = context.read<ProtocoloViewModel>().seleccionado;
-      if (protocolo != null && protocolo.medicoRemitenteId != null) {
-        final medicoVM = context.read<MedicoViewModel>();
-        // Solo cargar si no es el que ya tenemos o no tenemos ninguno
-        if (medicoVM.seleccionado == null ||
-            medicoVM.seleccionado!.id != protocolo.medicoRemitenteId) {
-          await medicoVM.cargarDetalle(protocolo.medicoRemitenteId!);
+      if (protocolo != null) {
+        // Cargar Médico
+        if (protocolo.medicoRemitenteId != null) {
+          final medicoVM = context.read<MedicoViewModel>();
+          // Solo cargar si no es el que ya tenemos o no tenemos ninguno
+          if (medicoVM.seleccionado == null ||
+              medicoVM.seleccionado!.id != protocolo.medicoRemitenteId) {
+            await medicoVM.cargarDetalle(protocolo.medicoRemitenteId!);
+          }
+        }
+
+        if (!mounted) return;
+        // Cargar Paciente
+        if (protocolo.pacienteId != null) {
+          final pacienteVM = context.read<PacienteViewModel>();
+          if (pacienteVM.seleccionado == null ||
+              pacienteVM.seleccionado!.id != protocolo.pacienteId) {
+            await pacienteVM.cargarDetalle(protocolo.pacienteId!);
+          }
         }
       }
     });
@@ -239,7 +258,7 @@ class _ProtocolPreviewViewState extends State<ProtocolPreviewView> {
                   info?.direccion ?? 'Vista Previa para Descargar/Imprimir',
                   style: GoogleFonts.lato(
                     fontSize: 12,
-                    color: AppColors.textDark.withOpacity(0.6),
+                    color: AppColors.textDark.withValues(alpha: 0.6),
                   ),
                 ),
                 const Divider(height: 24),
@@ -375,12 +394,40 @@ class _ProtocolPreviewViewState extends State<ProtocolPreviewView> {
               value,
               style: GoogleFonts.lato(
                 fontSize: 12,
-                color: AppColors.textDark.withOpacity(0.7),
+                color: AppColors.textDark.withValues(alpha: 0.7),
               ),
             ),
           ),
         ],
       ),
+    );
+  }
+
+  Future<Uint8List> _generatePdf() async {
+    final protocolo = context.read<ProtocoloViewModel>().seleccionado;
+    if (protocolo == null) throw Exception('Protocolo no cargado');
+
+    final vetInfo = context.read<VeterinariaViewModel>().info;
+
+    // Asegurar que Medico y Paciente sean los correctos para este protocolo
+    // (A veces los VM pueden tener seleccionado otro si se cambió rápido)
+    // Pero como cargamos en detail, usamos lo que haya si coincide ID.
+
+    final medico = context.read<MedicoViewModel>().seleccionado;
+    final medicoCorrecto = (medico?.id == protocolo.medicoRemitenteId)
+        ? medico
+        : null;
+
+    final paciente = context.read<PacienteViewModel>().seleccionado;
+    final pacienteCorrecto = (paciente?.id == protocolo.pacienteId)
+        ? paciente
+        : null;
+
+    return await PdfGenerator.generateProtocolPdf(
+      protocolo: protocolo,
+      vetInfo: vetInfo,
+      medico: medicoCorrecto,
+      paciente: pacienteCorrecto,
     );
   }
 
@@ -395,31 +442,72 @@ class _ProtocolPreviewViewState extends State<ProtocolPreviewView> {
             ElevatedButton.icon(
               icon: const Icon(Icons.download),
               label: const Text('Descargar PDF'),
-              onPressed: () {
-                // TODO: Descargar PDF
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Descargando PDF...')),
-                );
+              onPressed: () async {
+                try {
+                  final bytes = await _generatePdf();
+                  final filename = 'protocolo_${widget.protocolId}.pdf';
+
+                  // Usar FlutterFileDialog para permitir al usuario elegir dónde guardar
+                  final params = SaveFileDialogParams(
+                    data: bytes,
+                    fileName: filename,
+                  );
+
+                  final filePath = await FlutterFileDialog.saveFile(
+                    params: params,
+                  );
+
+                  if (!mounted) return;
+
+                  if (filePath != null) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('PDF guardado exitosamente'),
+                      ),
+                    );
+                  }
+                } catch (e) {
+                  if (!mounted) return;
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Error al generar PDF: $e')),
+                  );
+                }
               },
             ),
             ElevatedButton.icon(
               icon: const Icon(Icons.print),
               label: const Text('Imprimir'),
-              onPressed: () {
-                // TODO: Imprimir
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Abriendo impresora...')),
-                );
+              onPressed: () async {
+                try {
+                  final bytes = await _generatePdf();
+                  await Printing.layoutPdf(
+                    onLayout: (format) async => bytes,
+                    name: 'protocolo_${widget.protocolId}',
+                  );
+                } catch (e) {
+                  if (!mounted) return;
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Error al imprimir: $e')),
+                  );
+                }
               },
             ),
             ElevatedButton.icon(
               icon: const Icon(Icons.share),
               label: const Text('Compartir'),
-              onPressed: () {
-                // TODO: Compartir
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Opciones de compartir...')),
-                );
+              onPressed: () async {
+                try {
+                  final bytes = await _generatePdf();
+                  await Printing.sharePdf(
+                    bytes: bytes,
+                    filename: 'protocolo_${widget.protocolId}.pdf',
+                  );
+                } catch (e) {
+                  if (!mounted) return;
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Error al compartir: $e')),
+                  );
+                }
               },
             ),
           ],

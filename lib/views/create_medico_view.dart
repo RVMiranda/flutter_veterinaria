@@ -44,12 +44,16 @@ class _CreateMedicoViewState extends State<CreateMedicoView> {
 
     try {
       await context.read<MedicoViewModel>().crearMedico(medico);
-      // Volver a settings
-      context.goNamed(RouteNames.settings);
+      if (mounted) {
+        // Volver a settings
+        context.goNamed(RouteNames.settings);
+      }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error al guardar médico: ${e.toString()}')),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error al guardar médico: ${e.toString()}')),
+        );
+      }
     }
   }
 

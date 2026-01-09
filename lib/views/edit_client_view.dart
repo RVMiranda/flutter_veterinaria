@@ -28,6 +28,7 @@ class _EditClientViewState extends State<EditClientView> {
   void initState() {
     super.initState();
     Future.microtask(() async {
+      if (!mounted) return;
       final vm = context.read<PropietarioViewModel>();
       await vm.cargarDetalle(widget.clientId);
       final p = vm.seleccionado;
@@ -71,6 +72,7 @@ class _EditClientViewState extends State<EditClientView> {
       await context.read<PropietarioViewModel>().actualizarPropietario(
         actualizado,
       );
+      if (!mounted) return;
       // Ir al detalle del propietario (reemplaza ubicación para evitar volver al edit)
       context.goNamed(
         RouteNames.clientDetail,

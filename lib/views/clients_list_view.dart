@@ -20,7 +20,9 @@ class _ClientsListViewState extends State<ClientsListView> {
   @override
   void initState() {
     super.initState();
-    Future.microtask(() => context.read<PropietarioViewModel>().cargarTodos());
+    Future.microtask(() {
+      if (mounted) context.read<PropietarioViewModel>().cargarTodos();
+    });
   }
 
   @override
@@ -118,7 +120,7 @@ class _ClientsListViewState extends State<ClientsListView> {
                   'No hay propietarios',
                   style: GoogleFonts.lato(
                     fontSize: 14,
-                    color: AppColors.textDark.withOpacity(0.6),
+                    color: AppColors.textDark.withValues(alpha: 0.6),
                   ),
                 ),
               ],
@@ -146,7 +148,7 @@ class _ClientsListViewState extends State<ClientsListView> {
           width: 50,
           height: 50,
           decoration: BoxDecoration(
-            color: AppColors.secondary.withOpacity(0.1),
+            color: AppColors.secondary.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(8),
           ),
           child: const Center(

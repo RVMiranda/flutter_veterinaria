@@ -36,6 +36,7 @@ class _EditPatientViewState extends State<EditPatientView> {
   void initState() {
     super.initState();
     Future.microtask(() async {
+      if (!mounted) return;
       final vm = context.read<PacienteViewModel>();
       await vm.cargarDetalle(widget.patientId);
       final paciente = vm.seleccionado;
@@ -90,6 +91,7 @@ class _EditPatientViewState extends State<EditPatientView> {
 
     try {
       await context.read<PacienteViewModel>().actualizarPaciente(paciente);
+      if (!mounted) return;
       // Volver al historial
       // Use goNamed so we replace the current route and don't allow back to edit
       context.goNamed(
@@ -100,6 +102,7 @@ class _EditPatientViewState extends State<EditPatientView> {
         },
       );
     } catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Error al actualizar: ${e.toString()}')),
       );
