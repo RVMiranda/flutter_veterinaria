@@ -51,6 +51,77 @@ class _SettingsViewState extends State<SettingsView> {
     super.dispose();
   }
 
+  void _showAboutDialog() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Acerca de'),
+          content: const Text(
+            'Aplicación móvil desarrollada con Flutter por Rafael Miranda.\n\n'
+            'Para reportar algun error o si quiere ponerse en contacto, puede hacerlo mediante: rafmicr884@gmail.com',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Cerrar'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _deleteMedicoWithConfirmation(int? id) {
+    if (id == null) return;
+    // Usamos Future.microtask o un post frame callback para mostrar el dialogo
+    // si vinimos desde un popup menu, a veces el contexto se pierde o el menu se cierra.
+    // Usar el contexto del widget padre debería ser seguro.
+    Future.microtask(() async {
+      if (!mounted) return;
+      final confirm = await showDialog<bool>(
+        context: context,
+        builder: (dCtx) => AlertDialog(
+          title: const Text('Confirmar Eliminación'),
+          content: const Text(
+            '¿Está seguro de eliminar este médico? Si tiene protocolos asociados, la eliminación podría fallar o quedar incongruente.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dCtx).pop(false),
+              child: const Text('Cancelar'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(dCtx).pop(true),
+              child: const Text(
+                'Eliminar',
+                style: TextStyle(color: Colors.red),
+              ),
+            ),
+          ],
+        ),
+      );
+
+      if (confirm == true) {
+        if (!mounted) return;
+        try {
+          await context.read<MedicoViewModel>().eliminarMedico(id);
+          if (!mounted) return;
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Médico eliminado correctamente')),
+          );
+          // Recargar la lista
+          context.read<MedicoViewModel>().cargarTodos();
+        } catch (e) {
+          if (!mounted) return;
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text('Error al eliminar: $e')));
+        }
+      }
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -64,6 +135,12 @@ class _SettingsViewState extends State<SettingsView> {
           ),
         ),
         elevation: 0,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.help_outline),
+            onPressed: _showAboutDialog,
+          ),
+        ],
       ),
       backgroundColor: AppColors.background,
       body: SingleChildScrollView(
@@ -263,13 +340,18 @@ class _SettingsViewState extends State<SettingsView> {
                           PopupMenuItem(
                             child: const Text('Editar'),
                             onTap: () {
-                              // TODO: Editar médico
+                              context.pushNamed(
+                                RouteNames.editMedico,
+                                pathParameters: {
+                                  'medicoId': medico.id.toString(),
+                                },
+                              );
                             },
                           ),
                           PopupMenuItem(
                             child: const Text('Eliminar'),
                             onTap: () {
-                              // TODO: Eliminar médico
+                              _deleteMedicoWithConfirmation(medico.id);
                             },
                           ),
                         ],

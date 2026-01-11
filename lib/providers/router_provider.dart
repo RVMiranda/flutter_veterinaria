@@ -11,6 +11,7 @@ import '../views/edit_client_view.dart';
 import '../views/create_patient_view.dart';
 import '../views/edit_patient_view.dart';
 import '../views/create_medico_view.dart';
+import '../views/edit_medico_view.dart';
 import '../views/protocol_edit_view.dart';
 import '../views/protocol_preview_view.dart';
 import '../views/all_protocols_view.dart';
@@ -49,6 +50,7 @@ abstract class RouteNames {
   static const String editPatient = 'editPatient';
   static const String patientHistory = 'patientHistory';
   static const String createMedico = 'createMedico';
+  static const String editMedico = 'editMedico';
   static const String protocolEdit = 'protocolEdit';
   static const String protocolPreview = 'protocolPreview';
   static const String allProtocols = 'allProtocols';
@@ -91,6 +93,14 @@ final routerProvider = Provider<GoRouter>(
                 name: RouteNames.createMedico,
                 builder: (context, state) {
                   return const CreateMedicoView();
+                },
+              ),
+              GoRoute(
+                path: 'medicos/edit/:medicoId',
+                name: RouteNames.editMedico,
+                builder: (context, state) {
+                  final medicoId = int.parse(state.pathParameters['medicoId']!);
+                  return EditMedicoView(medicoId: medicoId);
                 },
               ),
             ],
