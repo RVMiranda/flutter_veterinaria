@@ -103,11 +103,8 @@ class _HomeViewState extends State<HomeView> {
           ),
         ),
         onChanged: (value) {
+          context.read<ProtocoloViewModel>().filtrarProtocolos(value);
           setState(() {});
-          if (value.isNotEmpty) {
-            // Aquí se podría implementar búsqueda
-            // context.read<ProtocoloViewModel>().buscarPorNumeroInterno(value);
-          }
         },
       ),
     );

@@ -23,7 +23,18 @@ class DatabaseHelper {
     final dbPath = await getDatabasesPath();
     final path = join(dbPath, filePath);
 
-    return await openDatabase(path, version: 1, onCreate: _createDB);
+    return await openDatabase(
+      path,
+      version: 2,
+      onCreate: _createDB,
+      onUpgrade: _onUpgrade,
+    );
+  }
+
+  Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
+    if (oldVersion < 2) {
+      await db.execute('ALTER TABLE protocolo ADD COLUMN rutas_imagenes TEXT');
+    }
   }
 
   Future<void> _createDB(Database db, int version) async {
@@ -96,6 +107,7 @@ class DatabaseHelper {
         liquido_enviado_ml REAL,
         metodo_fijacion TEXT,
         ruta_imagen_microscopia TEXT,
+        rutas_imagenes TEXT,
         aspecto_macroscopico TEXT,
         aspecto_microscopico TEXT,
         diagnostico_citologico TEXT,

@@ -1,6 +1,8 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 import '../config/theme.dart';
 import '../viewmodel/protocolo_viewmodel.dart';
@@ -50,6 +52,7 @@ class _ProtocolEditViewState extends State<ProtocolEditView> {
   late TextEditingController _tasaCrecimientoController;
   late TextEditingController _contornoController;
   int? _selectedMedicoId;
+  List<String> _imagenes = [];
 
   @override
   void initState() {
@@ -125,6 +128,10 @@ class _ProtocolEditViewState extends State<ProtocolEditView> {
     _diagnosticoCitologicoController.text =
         protocolo.diagnosticoCitologico ?? '';
     _observacionesController.text = protocolo.observaciones ?? '';
+
+    if (protocolo.imagenes != null) {
+      _imagenes = List.from(protocolo.imagenes!);
+    }
 
     // Poblamos también la evaluación de lesión si existe
     final evaluacion = viewModel.evaluacionSeleccionada;
@@ -594,6 +601,84 @@ class _ProtocolEditViewState extends State<ProtocolEditView> {
                     hintText: 'Observaciones adicionales...',
                   ),
                 ),
+                const SizedBox(height: 24),
+                Text(
+                  'Imágenes (${_imagenes.length}/10)',
+                  style: GoogleFonts.lato(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Wrap(
+                  spacing: 12,
+                  runSpacing: 12,
+                  children: [
+                    ..._imagenes.map(
+                      (path) => Stack(
+                        children: [
+                          Container(
+                            width: 100,
+                            height: 100,
+                            decoration: BoxDecoration(
+                              border: Border.all(color: AppColors.border),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(8),
+                              child: Image.file(File(path), fit: BoxFit.cover),
+                            ),
+                          ),
+                          Positioned(
+                            right: -5,
+                            top: -5,
+                            child: IconButton(
+                              icon: const Icon(
+                                Icons.remove_circle,
+                                color: Colors.red,
+                              ),
+                              onPressed: () {
+                                setState(() {
+                                  _imagenes.remove(path);
+                                });
+                              },
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    if (_imagenes.length < 10)
+                      GestureDetector(
+                        onTap: () async {
+                          final picker = ImagePicker();
+                          final XFile? image = await picker.pickImage(
+                            source: ImageSource.gallery,
+                          );
+                          if (image != null) {
+                            setState(() {
+                              _imagenes.add(image.path);
+                            });
+                          }
+                        },
+                        child: Container(
+                          width: 100,
+                          height: 100,
+                          decoration: BoxDecoration(
+                            color: AppColors.background,
+                            border: Border.all(
+                              color: AppColors.border,
+                              style: BorderStyle.solid,
+                            ),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: const Icon(
+                            Icons.add_a_photo,
+                            color: AppColors.primary,
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
               ],
             ),
           ),
@@ -731,6 +816,7 @@ class _ProtocolEditViewState extends State<ProtocolEditView> {
       diagnosticoCitologico: _diagnosticoCitologicoController.text.isEmpty
           ? null
           : _diagnosticoCitologicoController.text,
+      imagenes: _imagenes,
       observaciones: _observacionesController.text.isEmpty
           ? null
           : _observacionesController.text,

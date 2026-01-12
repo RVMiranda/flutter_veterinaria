@@ -1,6 +1,8 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 import '../config/theme.dart';
 import '../models/veterinaria_info.dart';
@@ -230,6 +232,48 @@ class _SettingsViewState extends State<SettingsView> {
                           labelText: 'Email de Contacto',
                           prefixIcon: Icon(Icons.email),
                         ),
+                      ),
+                      const SizedBox(height: 24),
+                      Row(
+                        children: [
+                          if (viewModel.info?.logoPath != null &&
+                              File(viewModel.info!.logoPath!).existsSync())
+                            Container(
+                              width: 60,
+                              height: 60,
+                              decoration: BoxDecoration(
+                                border: Border.all(color: Colors.grey.shade300),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: ClipRRect(
+                                borderRadius: BorderRadius.circular(8),
+                                child: Image.file(
+                                  File(viewModel.info!.logoPath!),
+                                  fit: BoxFit.cover,
+                                ),
+                              ),
+                            )
+                          else
+                            const Icon(
+                              Icons.image_not_supported,
+                              size: 60,
+                              color: Colors.grey,
+                            ),
+                          const SizedBox(width: 16),
+                          ElevatedButton.icon(
+                            onPressed: () async {
+                              final picker = ImagePicker();
+                              final XFile? image = await picker.pickImage(
+                                source: ImageSource.gallery,
+                              );
+                              if (image != null) {
+                                await viewModel.actualizarLogo(image.path);
+                              }
+                            },
+                            icon: const Icon(Icons.image),
+                            label: const Text("Seleccionar Logo"),
+                          ),
+                        ],
                       ),
                       const SizedBox(height: 24),
                       ElevatedButton.icon(

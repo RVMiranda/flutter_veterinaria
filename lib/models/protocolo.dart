@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 class Protocolo {
   final int? id;
   final String? numeroInterno;
@@ -23,6 +25,7 @@ class Protocolo {
 
   // Resultados
   final String? rutaImagenMicroscopia;
+  final List<String>? imagenes;
   final String? aspectoMacroscopico;
   final String? aspectoMicroscopico;
   final String? diagnosticoCitologico;
@@ -45,6 +48,7 @@ class Protocolo {
     this.liquidoEnviadoMl,
     this.metodoFijacion,
     this.rutaImagenMicroscopia,
+    this.imagenes,
     this.aspectoMacroscopico,
     this.aspectoMicroscopico,
     this.diagnosticoCitologico,
@@ -53,6 +57,15 @@ class Protocolo {
 
   // Convertir desde Map
   factory Protocolo.fromMap(Map<String, dynamic> map) {
+    List<String>? decodedImages;
+    if (map['rutas_imagenes'] != null) {
+      try {
+        decodedImages = List<String>.from(jsonDecode(map['rutas_imagenes']));
+      } catch (e) {
+        decodedImages = [];
+      }
+    }
+
     return Protocolo(
       id: map['id'] as int?,
       numeroInterno: map['numero_interno'] as String?,
@@ -74,6 +87,7 @@ class Protocolo {
           : null,
       metodoFijacion: map['metodo_fijacion'] as String?,
       rutaImagenMicroscopia: map['ruta_imagen_microscopia'] as String?,
+      imagenes: decodedImages,
       aspectoMacroscopico: map['aspecto_macroscopico'] as String?,
       aspectoMicroscopico: map['aspecto_microscopico'] as String?,
       diagnosticoCitologico: map['diagnostico_citologico'] as String?,
@@ -100,6 +114,7 @@ class Protocolo {
       'liquido_enviado_ml': liquidoEnviadoMl,
       'metodo_fijacion': metodoFijacion,
       'ruta_imagen_microscopia': rutaImagenMicroscopia,
+      'rutas_imagenes': imagenes != null ? jsonEncode(imagenes) : null,
       'aspecto_macroscopico': aspectoMacroscopico,
       'aspecto_microscopico': aspectoMicroscopico,
       'diagnostico_citologico': diagnosticoCitologico,
@@ -125,6 +140,7 @@ class Protocolo {
     double? liquidoEnviadoMl,
     String? metodoFijacion,
     String? rutaImagenMicroscopia,
+    List<String>? imagenes,
     String? aspectoMacroscopico,
     String? aspectoMicroscopico,
     String? diagnosticoCitologico,
@@ -148,6 +164,7 @@ class Protocolo {
       metodoFijacion: metodoFijacion ?? this.metodoFijacion,
       rutaImagenMicroscopia:
           rutaImagenMicroscopia ?? this.rutaImagenMicroscopia,
+      imagenes: imagenes ?? this.imagenes,
       aspectoMacroscopico: aspectoMacroscopico ?? this.aspectoMacroscopico,
       aspectoMicroscopico: aspectoMicroscopico ?? this.aspectoMicroscopico,
       diagnosticoCitologico:

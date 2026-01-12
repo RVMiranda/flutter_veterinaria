@@ -12,6 +12,7 @@ import '../viewmodel/protocolo_viewmodel.dart';
 import '../viewmodel/veterinaria_viewmodel.dart';
 import '../viewmodel/medico_viewmodel.dart';
 import '../viewmodel/paciente_viewmodel.dart';
+import '../viewmodel/propietario_viewmodel.dart';
 
 class ProtocolPreviewView extends StatefulWidget {
   final int protocolId;
@@ -423,11 +424,24 @@ class _ProtocolPreviewViewState extends State<ProtocolPreviewView> {
         ? paciente
         : null;
 
+    // Obtener propietario si existe el paciente
+    if (pacienteCorrecto?.propietarioId != null) {
+      await context.read<PropietarioViewModel>().cargarDetalle(
+        pacienteCorrecto!.propietarioId!,
+      );
+    }
+    final propietario = context.read<PropietarioViewModel>().seleccionado;
+    final propietarioCorrecto =
+        (propietario?.id == pacienteCorrecto?.propietarioId)
+        ? propietario
+        : null;
+
     return await PdfGenerator.generateProtocolPdf(
       protocolo: protocolo,
       vetInfo: vetInfo,
       medico: medicoCorrecto,
       paciente: pacienteCorrecto,
+      propietario: propietarioCorrecto,
     );
   }
 

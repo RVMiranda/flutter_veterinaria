@@ -10,6 +10,7 @@ class ProtocoloViewModel extends BaseViewModel {
 
   final ProtocoloRepository _repository;
 
+  List<Protocolo> _allProtocolos = [];
   List<Protocolo> _protocolos = [];
   Protocolo? _seleccionado;
   EvaluacionLesion? _evaluacionSeleccionada;
@@ -23,12 +24,28 @@ class ProtocoloViewModel extends BaseViewModel {
   Future<void> cargarTodos() async {
     setLoading();
     try {
-      _protocolos = await _repository.obtenerTodosProtocolos();
+      _allProtocolos = await _repository.obtenerTodosProtocolos();
+      _protocolos = List.from(_allProtocolos);
       _estadisticas = await _repository.obtenerEstadisticas();
       setSuccess();
     } catch (e) {
       setError(e.toString());
     }
+  }
+
+  void filtrarProtocolos(String query) {
+    if (query.isEmpty) {
+      _protocolos = List.from(_allProtocolos);
+    } else {
+      final lowerQuery = query.toLowerCase();
+      _protocolos = _allProtocolos.where((p) {
+        return (p.numeroInterno?.toLowerCase().contains(lowerQuery) ?? false) ||
+            (p.dxPresuntivo?.toLowerCase().contains(lowerQuery) ?? false) ||
+            (p.diagnosticoCitologico?.toLowerCase().contains(lowerQuery) ??
+                false);
+      }).toList();
+    }
+    notifyListeners();
   }
 
   Future<void> cargarPorPaciente(int pacienteId) async {
