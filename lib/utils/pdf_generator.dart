@@ -1,5 +1,4 @@
 import 'dart:io';
-import 'dart:typed_data';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart' show rootBundle;
 import 'package:pdf/pdf.dart';
@@ -27,14 +26,15 @@ class PdfGenerator {
 
     // Pre-procesar imágenes para evitar OOM/Crashes con `compute`
     Uint8List? logoBytes;
-    if (vetInfo?.logoPath != null) {
+    final logoPath = vetInfo?.logoPath;
+    if (logoPath != null) {
       // Intentar cargar como archivo si existe, sino verificar si es un asset (aunque vetInfo suele ser archivo local)
-      if (await File(vetInfo!.logoPath!).exists()) {
-        logoBytes = await compute(_processImageIsolate, vetInfo!.logoPath!);
+      if (await File(logoPath).exists()) {
+        logoBytes = await compute(_processImageIsolate, logoPath);
       } else {
         // Fallback: Si el path no es un archivo físico, intentar cargar como asset
         try {
-          final byteData = await rootBundle.load(vetInfo!.logoPath!);
+          final byteData = await rootBundle.load(logoPath);
           final bytes = byteData.buffer.asUint8List();
           // Procesar también el asset para reducir tamaño
           logoBytes = await compute(_processBytesIsolate, bytes);
@@ -78,7 +78,11 @@ class PdfGenerator {
                 crossAxisAlignment: pw.CrossAxisAlignment.start,
                 children: [
                   if (paciente != null) ...[
-                    _buildInfoRow('Nombre del Paciente', paciente.nombre, fontBold),
+                    _buildInfoRow(
+                      'Nombre del Paciente',
+                      paciente.nombre,
+                      fontBold,
+                    ),
                     _buildInfoRow(
                       'Especie/Raza',
                       '${paciente.especie ?? '-'} / ${paciente.raza ?? '-'}',
@@ -96,20 +100,20 @@ class PdfGenerator {
                         paciente.fechaNacimiento!,
                         fontBold,
                       ),
-                      _buildInfoRow(
-                        'Castrado',
-                        paciente.castrado == 1
-                            ? 'Sí'
-                            : (paciente.castrado == 2 ? 'NR' : 'No'),
-                        fontBold,
-                      ),
-                      _buildInfoRow(
-                        'Peso al Momento',
-                        protocolo.pesoAlMomento != null
-                            ? '${protocolo.pesoAlMomento} kg'
-                            : '-',
-                        fontBold,
-                      ),
+                    _buildInfoRow(
+                      'Castrado',
+                      paciente.castrado == 1
+                          ? 'Sí'
+                          : (paciente.castrado == 2 ? 'NR' : 'No'),
+                      fontBold,
+                    ),
+                    _buildInfoRow(
+                      'Peso al Momento',
+                      protocolo.pesoAlMomento != null
+                          ? '${protocolo.pesoAlMomento} kg'
+                          : '-',
+                      fontBold,
+                    ),
                   ],
                   if (propietario != null) ...[
                     pw.Divider(color: PdfColors.grey300),

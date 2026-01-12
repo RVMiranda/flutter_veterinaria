@@ -430,6 +430,9 @@ class _ProtocolPreviewViewState extends State<ProtocolPreviewView> {
         pacienteCorrecto!.propietarioId!,
       );
     }
+
+    if (!mounted) throw Exception('Context unmounted');
+
     final propietario = context.read<PropietarioViewModel>().seleccionado;
     final propietarioCorrecto =
         (propietario?.id == pacienteCorrecto?.propietarioId)
