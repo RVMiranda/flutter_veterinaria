@@ -26,6 +26,7 @@ class _ProtocolEditViewState extends State<ProtocolEditView> {
   int _currentPage = 0;
 
   // Controllers del Protocolo
+  late TextEditingController _etiquetaController;
   late TextEditingController _tejidosController;
   late TextEditingController _anamnesesController;
   late TextEditingController _dxPresuntivoController;
@@ -59,6 +60,7 @@ class _ProtocolEditViewState extends State<ProtocolEditView> {
     super.initState();
     _pageController = PageController();
 
+    _etiquetaController = TextEditingController();
     _tejidosController = TextEditingController();
     _anamnesesController = TextEditingController();
     _dxPresuntivoController = TextEditingController();
@@ -114,7 +116,7 @@ class _ProtocolEditViewState extends State<ProtocolEditView> {
     final viewModel = context.read<ProtocoloViewModel>();
     final protocolo = viewModel.seleccionado;
     if (protocolo == null) return;
-
+    _etiquetaController.text = protocolo.etiqueta ?? '';
     _tejidosController.text = protocolo.tejidosEnviados ?? '';
     _anamnesesController.text = protocolo.anamnesis ?? '';
     _dxPresuntivoController.text = protocolo.dxPresuntivo ?? '';
@@ -161,6 +163,7 @@ class _ProtocolEditViewState extends State<ProtocolEditView> {
 
   @override
   void dispose() {
+    _etiquetaController.dispose();
     _pageController.dispose();
     _tejidosController.dispose();
     _anamnesesController.dispose();
@@ -394,6 +397,14 @@ class _ProtocolEditViewState extends State<ProtocolEditView> {
             padding: const EdgeInsets.all(16),
             child: Column(
               children: [
+                TextField(
+                  controller: _etiquetaController,
+                  decoration: const InputDecoration(
+                    labelText: 'Etiqueta (Identificador interno)',
+                    hintText: 'Ej: Control Mensual, Pre-quirúrgico...',
+                  ),
+                ),
+                const SizedBox(height: 12),
                 TextField(
                   controller: _anamnesesController,
                   maxLines: 3,
@@ -782,6 +793,9 @@ class _ProtocolEditViewState extends State<ProtocolEditView> {
     final protocolo = Protocolo(
       id: widget.protocolId,
       numeroInterno: numeroInternoExistente,
+      etiqueta: _etiquetaController.text.isEmpty
+          ? null
+          : _etiquetaController.text,
       fechaCreacion: fechaCreacionExistente,
       pacienteId: pacienteId,
       medicoRemitenteId: _selectedMedicoId,

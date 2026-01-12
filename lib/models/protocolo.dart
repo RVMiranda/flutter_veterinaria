@@ -3,6 +3,7 @@ import 'dart:convert';
 class Protocolo {
   final int? id;
   final String? numeroInterno;
+  final String? etiqueta; // Nuevo campo etiqueta
   final String fechaCreacion; // DATETIME como String en SQLite
 
   // Relaciones
@@ -34,6 +35,7 @@ class Protocolo {
   Protocolo({
     this.id,
     this.numeroInterno,
+    this.etiqueta,
     String? fechaCreacion,
     this.pacienteId,
     this.medicoRemitenteId,
@@ -68,6 +70,7 @@ class Protocolo {
 
     return Protocolo(
       id: map['id'] as int?,
+      etiqueta: map['etiqueta'] as String?,
       numeroInterno: map['numero_interno'] as String?,
       fechaCreacion: map['fecha_creacion'] as String,
       pacienteId: map['paciente_id'] as int?,
@@ -99,6 +102,7 @@ class Protocolo {
   Map<String, dynamic> toMap() {
     return {
       if (id != null) 'id': id,
+      'etiqueta': etiqueta,
       'numero_interno': numeroInterno,
       'fecha_creacion': fechaCreacion,
       'paciente_id': pacienteId,
@@ -125,6 +129,7 @@ class Protocolo {
   // Método copyWith
   Protocolo copyWith({
     int? id,
+    String? etiqueta,
     String? numeroInterno,
     String? fechaCreacion,
     int? pacienteId,
@@ -147,6 +152,7 @@ class Protocolo {
     String? observaciones,
   }) {
     return Protocolo(
+      etiqueta: etiqueta ?? this.etiqueta,
       id: id ?? this.id,
       numeroInterno: numeroInterno ?? this.numeroInterno,
       fechaCreacion: fechaCreacion ?? this.fechaCreacion,

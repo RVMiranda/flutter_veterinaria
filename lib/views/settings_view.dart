@@ -61,7 +61,9 @@ class _SettingsViewState extends State<SettingsView> {
           title: const Text('Acerca de'),
           content: const Text(
             'Aplicación móvil desarrollada con Flutter por Rafael Miranda.\n\n'
-            'Para reportar algun error o si quiere ponerse en contacto, puede hacerlo mediante: rafmicr884@gmail.com',
+            'Para reportar algun error o si quiere ponerse en contacto, puede hacerlo mediante: rafmicr884@gmail.com \n\n'
+            '© 2026 RVMiranda. Todos los Derechos Reservados, el desarrollador no se hace responsable del mal uso de la aplicación.\n\n'
+            'Versión 1.0.0',
           ),
           actions: [
             TextButton(

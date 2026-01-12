@@ -25,7 +25,7 @@ class DatabaseHelper {
 
     return await openDatabase(
       path,
-      version: 2,
+      version: 3,
       onCreate: _createDB,
       onUpgrade: _onUpgrade,
     );
@@ -34,6 +34,9 @@ class DatabaseHelper {
   Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
     if (oldVersion < 2) {
       await db.execute('ALTER TABLE protocolo ADD COLUMN rutas_imagenes TEXT');
+    }
+    if (oldVersion < 3) {
+      await db.execute('ALTER TABLE protocolo ADD COLUMN etiqueta TEXT');
     }
   }
 
@@ -93,6 +96,7 @@ class DatabaseHelper {
       CREATE TABLE protocolo (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         numero_interno TEXT,
+        etiqueta TEXT,
         fecha_creacion DATETIME DEFAULT CURRENT_TIMESTAMP,
         paciente_id INTEGER,
         medico_remitente_id INTEGER,

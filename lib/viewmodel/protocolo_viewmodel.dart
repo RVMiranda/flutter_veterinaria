@@ -40,6 +40,7 @@ class ProtocoloViewModel extends BaseViewModel {
       final lowerQuery = query.toLowerCase();
       _protocolos = _allProtocolos.where((p) {
         return (p.numeroInterno?.toLowerCase().contains(lowerQuery) ?? false) ||
+            (p.etiqueta?.toLowerCase().contains(lowerQuery) ?? false) ||
             (p.dxPresuntivo?.toLowerCase().contains(lowerQuery) ?? false) ||
             (p.diagnosticoCitologico?.toLowerCase().contains(lowerQuery) ??
                 false);

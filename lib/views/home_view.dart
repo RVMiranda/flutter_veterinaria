@@ -288,6 +288,10 @@ class _HomeViewState extends State<HomeView> {
     final fecha = DateTime.parse(protocolo.fechaCreacion);
     final fechaFormato = '${fecha.day}/${fecha.month}/${fecha.year}';
     final numeroInterno = protocolo.numeroInterno ?? 'S/N';
+    final etiqueta =
+        protocolo.etiqueta != null && protocolo.etiqueta!.isNotEmpty
+        ? ' - ${protocolo.etiqueta}'
+        : '';
 
     return Card(
       elevation: 1,
@@ -315,7 +319,7 @@ class _HomeViewState extends State<HomeView> {
           ),
         ),
         title: Text(
-          'Protocolo #$numeroInterno',
+          'Protocolo #$numeroInterno$etiqueta',
           style: GoogleFonts.lato(
             fontSize: 14,
             fontWeight: FontWeight.w600,
