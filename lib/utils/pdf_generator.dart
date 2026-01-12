@@ -1,5 +1,7 @@
 import 'dart:io';
 import 'dart:typed_data';
+import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart' show rootBundle;
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
@@ -23,16 +25,27 @@ class PdfGenerator {
     final font = await PdfGoogleFonts.latoRegular();
     final fontBold = await PdfGoogleFonts.latoBold();
 
-    // Pre-procesar imágenes para evitar OOM/Crashes
+    // Pre-procesar imágenes para evitar OOM/Crashes con `compute`
     Uint8List? logoBytes;
     if (vetInfo?.logoPath != null) {
-      logoBytes = await _processImage(vetInfo!.logoPath!);
+      // Intentar cargar como archivo si existe, sino verificar si es un asset (aunque vetInfo suele ser archivo local)
+      if (await File(vetInfo!.logoPath!).exists()) {
+        logoBytes = await compute(_processImageIsolate, vetInfo!.logoPath!);
+      } else {
+        // Fallback: Si el path no es un archivo físico, intentar cargar como asset
+        try {
+          final byteData = await rootBundle.load(vetInfo!.logoPath!);
+          final bytes = byteData.buffer.asUint8List();
+          // Procesar también el asset para reducir tamaño
+          logoBytes = await compute(_processBytesIsolate, bytes);
+        } catch (_) {}
+      }
     }
 
     List<Uint8List> processedImages = [];
     if (protocolo.imagenes != null) {
       for (final path in protocolo.imagenes!) {
-        final bytes = await _processImage(path);
+        final bytes = await compute(_processImageIsolate, path);
         if (bytes != null) {
           processedImages.add(bytes);
         }
@@ -65,7 +78,7 @@ class PdfGenerator {
                 crossAxisAlignment: pw.CrossAxisAlignment.start,
                 children: [
                   if (paciente != null) ...[
-                    _buildInfoRow('Paciente', paciente.nombre, fontBold),
+                    _buildInfoRow('Nombre del Paciente', paciente.nombre, fontBold),
                     _buildInfoRow(
                       'Especie/Raza',
                       '${paciente.especie ?? '-'} / ${paciente.raza ?? '-'}',
@@ -77,6 +90,26 @@ class PdfGenerator {
                       '${paciente.calcularEdad() ?? '-'} años',
                       fontBold,
                     ),
+                    if (paciente.fechaNacimiento != null)
+                      _buildInfoRow(
+                        'Fecha Nac.',
+                        paciente.fechaNacimiento!,
+                        fontBold,
+                      ),
+                      _buildInfoRow(
+                        'Castrado',
+                        paciente.castrado == 1
+                            ? 'Sí'
+                            : (paciente.castrado == 2 ? 'NR' : 'No'),
+                        fontBold,
+                      ),
+                      _buildInfoRow(
+                        'Peso al Momento',
+                        protocolo.pesoAlMomento != null
+                            ? '${protocolo.pesoAlMomento} kg'
+                            : '-',
+                        fontBold,
+                      ),
                   ],
                   if (propietario != null) ...[
                     pw.Divider(color: PdfColors.grey300),
@@ -125,20 +158,6 @@ class PdfGenerator {
                     medico?.nombreCompleto ?? '-',
                     fontBold,
                   ),
-                  _buildInfoRow(
-                    'Edad al Momento',
-                    protocolo.edadAlMomento != null
-                        ? '${protocolo.edadAlMomento} años'
-                        : '-',
-                    fontBold,
-                  ),
-                  _buildInfoRow(
-                    'Peso al Momento',
-                    protocolo.pesoAlMomento != null
-                        ? '${protocolo.pesoAlMomento} kg'
-                        : '-',
-                    fontBold,
-                  ),
                 ],
               ),
             ),
@@ -182,6 +201,24 @@ class PdfGenerator {
               child: pw.Column(
                 crossAxisAlignment: pw.CrossAxisAlignment.start,
                 children: [
+                  if (protocolo.metodoFijacion != null)
+                    _buildInfoRow(
+                      'Método de Fijación',
+                      protocolo.metodoFijacion!,
+                      fontBold,
+                    ),
+                  if (protocolo.laminasEnviadas != null)
+                    _buildInfoRow(
+                      'Láminas Enviadas',
+                      '${protocolo.laminasEnviadas}',
+                      fontBold,
+                    ),
+                  if (protocolo.liquidoEnviadoMl != null)
+                    _buildInfoRow(
+                      'Líquido Enviado (ml)',
+                      '${protocolo.liquidoEnviadoMl}',
+                      fontBold,
+                    ),
                   _buildInfoRow(
                     'Sitio Anatómico',
                     protocolo.sitioAnatomico ?? '-',
@@ -266,24 +303,25 @@ class PdfGenerator {
     return doc.save();
   }
 
-  static Future<Uint8List?> _processImage(
-    String path, {
-    int maxWidth = 800,
-  }) async {
+  static Future<Uint8List?> _processImageIsolate(String path) async {
     try {
       final file = File(path);
       if (!file.existsSync()) return null;
 
       final bytes = await file.readAsBytes();
-      // Ejecutar decodificación y redimensionamiento en un microtask o simplemente síncrono
-      // pero el 'image' package es síncrono.
-      // Para evitar bloquear UI, lo ideal es compute, pero por ahora simplifiquemos:
-      // Si la imagen es muy grande, decodeImage puede tardar.
+      return _processBytesIsolate(bytes);
+    } catch (e) {
+      debugPrint('Error procesando imagen $path: $e');
+      return null;
+    }
+  }
 
+  static Future<Uint8List?> _processBytesIsolate(Uint8List bytes) async {
+    try {
       final image = img.decodeImage(bytes);
       if (image == null) return null;
 
-      // Redimensionar solo si es necesario para ahorrar memoria
+      const maxWidth = 800;
       if (image.width > maxWidth || image.height > maxWidth) {
         final resized = img.copyResize(
           image,
@@ -291,13 +329,12 @@ class PdfGenerator {
           height: image.height > image.width ? maxWidth : null,
           maintainAspect: true,
         );
-        return Uint8List.fromList(img.encodeJpg(resized, quality: 70));
+        return Uint8List.fromList(img.encodeJpg(resized, quality: 60));
       } else {
-        // Re-encoding siempre es bueno para normalizar formato a JPG que PDF soporta bien
-        return Uint8List.fromList(img.encodeJpg(image, quality: 70));
+        return Uint8List.fromList(img.encodeJpg(image, quality: 60));
       }
     } catch (e) {
-      print('Error procesando imagen $path: $e');
+      debugPrint('Error procesando bytes de imagen: $e');
       return null;
     }
   }
@@ -349,6 +386,15 @@ class PdfGenerator {
                       style: const pw.TextStyle(
                         fontSize: 12,
                         color: PdfColors.grey700,
+                      ),
+                    ),
+                  if (info?.telefonoUrgencias != null &&
+                      info!.telefonoUrgencias!.isNotEmpty)
+                    pw.Text(
+                      'Urgencias: ${info!.telefonoUrgencias}',
+                      style: const pw.TextStyle(
+                        fontSize: 12,
+                        color: PdfColors.red900,
                       ),
                     ),
                   if (info?.emailContacto != null)
